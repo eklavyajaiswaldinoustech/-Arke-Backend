@@ -1,0 +1,107 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Coupons</h1>
+    <p class="page-sub"><%= coupons.length %> active discount codes</p>
+  </div>
+  <button onclick="document.getElementById('addCouponForm').style.display='block'" class="btn btn-primary">+ Add Coupon</button>
+</div>
+
+<!-- Add Coupon inline form -->
+<div id="addCouponForm" style="display:none;">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">New Coupon</span>
+      <button onclick="document.getElementById('addCouponForm').style.display='none'" class="btn btn-ghost btn-sm">✕ Cancel</button>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="/admin/coupons/add">
+        <div class="form-grid-3">
+          <div class="field">
+            <label>Coupon Code <span>*</span></label>
+            <input type="text" name="code" placeholder="e.g. ARKE20" required style="text-transform:uppercase;" />
+          </div>
+          <div class="field">
+            <label>Discount Type <span>*</span></label>
+            <select name="discountType">
+              <option value="percentage">Percentage (%)</option>
+              <option value="fixed">Fixed Amount (₹)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Discount Value <span>*</span></label>
+            <input type="number" name="discountValue" placeholder="20" required min="1" />
+          </div>
+          <div class="field">
+            <label>Min Order Amount (₹)</label>
+            <input type="number" name="minOrderAmount" placeholder="500" min="0" />
+          </div>
+          <div class="field">
+            <label>Max Uses</label>
+            <input type="number" name="maxUses" placeholder="100" min="1" />
+          </div>
+          <div class="field">
+            <label>Expiry Date</label>
+            <input type="date" name="expiryDate" />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Coupon</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Coupons Table -->
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Type</th>
+          <th>Value</th>
+          <th>Min Order</th>
+          <th>Used / Max</th>
+          <th>Expiry</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (coupons.length > 0) { %>
+          <% coupons.forEach(c => { %>
+          <tr>
+            <td style="color:var(--gold); font-size:13px; font-weight:600; letter-spacing:1px;"><%= c.code %></td>
+            <td><span class="badge badge-gray"><%= c.discountType === 'percentage' ? 'Percent' : 'Fixed' %></span></td>
+            <td style="color:var(--text);">
+              <%= c.discountType === 'percentage' ? c.discountValue+'%' : '₹'+c.discountValue %>
+            </td>
+            <td style="color:var(--text3);">₹<%= (c.minOrderAmount||0).toLocaleString() %></td>
+            <td style="color:var(--text2);"><%= c.usedCount||0 %> / <%= c.maxUses || '∞' %></td>
+            <td style="color:var(--text3); font-size:12px;">
+              <%= c.expiryDate ? new Date(c.expiryDate).toLocaleDateString('en-IN') : 'No expiry' %>
+            </td>
+            <td>
+              <% const expired = c.expiryDate && new Date(c.expiryDate) < new Date(); %>
+              <span class="badge <%= !c.isActive || expired ? 'badge-red' : 'badge-green' %>">
+                <%= expired ? 'Expired' : c.isActive ? 'Active' : 'Disabled' %>
+              </span>
+            </td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <a href="/admin/coupons/toggle/<%= c._id %>" class="btn btn-ghost btn-sm">
+                  <%= c.isActive ? 'Disable' : 'Enable' %>
+                </a>
+                <a href="/admin/coupons/delete/<%= c._id %>"
+                   class="btn btn-danger btn-sm"
+                   data-confirm="Delete coupon '<%= c.code %>'?">Del</a>
+              </div>
+            </td>
+          </tr>
+          <% }); %>
+        <% } else { %>
+        <tr><td colspan="8" style="text-align:center;padding:60px;color:var(--text3);">No coupons yet.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,133 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Edit Banner</h1>
+    <p class="page-sub">Update banner details and settings</p>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start;">
+  <!-- Edit Form -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">Banner Details</span></div>
+    <div class="card-body">
+      <form action="/admin/banners/edit/<%= banner._id %>" method="POST" enctype="multipart/form-data">
+        
+        <!-- Title -->
+        <div class="field">
+          <label>Banner Title <span>*</span></label>
+          <input type="text" name="title" value="<%= banner.title || '' %>" placeholder="e.g. New Season Collection" required>
+        </div>
+
+        <!-- Subtitle -->
+        <div class="field">
+          <label>Subtitle / Description</label>
+          <input type="text" name="subtitle" value="<%= banner.subtitle || '' %>" placeholder="Supporting text line">
+        </div>
+
+        <!-- Description -->
+        <div class="field">
+          <label>Full Description</label>
+          <textarea name="description" placeholder="Detailed description" style="min-height:80px;"><%= banner.description || '' %></textarea>
+        </div>
+
+        <!-- CTA Button -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="field">
+            <label>CTA Button Text</label>
+            <input type="text" name="ctaText" value="<%= banner.ctaText || 'Shop Now' %>" placeholder="Shop Now">
+          </div>
+          <div class="field">
+            <label>CTA Link</label>
+            <input type="text" name="ctaLink" value="<%= banner.ctaLink || '/products' %>" placeholder="/products">
+          </div>
+        </div>
+
+        <!-- Display Order -->
+        <div class="field">
+          <label>Display Order</label>
+          <input type="number" name="order" value="<%= banner.order || 0 %>" min="0">
+        </div>
+
+        <!-- Status -->
+        <div class="field">
+          <label>Status</label>
+          <select name="isActive">
+            <option value="true" <%= banner.isActive ? 'selected' : '' %>>Active (Visible)</option>
+            <option value="false" <%= !banner.isActive ? 'selected' : '' %>>Hidden</option>
+          </select>
+        </div>
+
+        <!-- Image Upload -->
+        <div class="field">
+          <label>Banner Image</label>
+          <% if (banner.image) { %>
+            <div style="margin-bottom:12px;">
+              <img src="<%= banner.image %>" style="max-width:100%; height:auto; border:1px solid var(--border); border-radius:4px; max-height:200px;">
+              <div style="font-size:11px; color:var(--text3); margin-top:6px;">Current image</div>
+            </div>
+          <% } %>
+          <div class="upload-area">
+            <div style="font-size:28px; color:var(--text3); margin-bottom:8px;">▣</div>
+            <div class="upload-text">Upload new banner image (optional)</div>
+            <div style="font-size:10px; color:var(--text3); margin-top:4px;">Recommended: 1920×800px</div>
+            <input type="file" name="image" accept="image/*" data-preview="bannerPreview">
+          </div>
+          <div id="bannerPreview" class="img-preview-grid"></div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex; gap:10px; margin-top:24px;">
+          <button type="submit" class="btn btn-primary" style="flex:1; justify-content:center;">Update Banner</button>
+          <a href="/admin/banners" class="btn btn-ghost" style="flex:1; justify-content:center; text-decoration:none;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">Info</span></div>
+    <div class="card-body" style="font-size:12px; color:var(--text3); line-height:1.8;">
+      <div style="margin-bottom:16px;">
+        <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Banner ID</div>
+        <div style="font-family:monospace; font-size:11px;"><%= banner._id %></div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Status</div>
+        <div><span class="badge <%= banner.isActive ? 'badge-green' : 'badge-gray' %>"><%= banner.isActive ? 'Active' : 'Hidden' %></span></div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Created</div>
+        <div><%= new Date(banner.createdAt).toLocaleDateString('en-IN') %></div>
+      </div>
+      <div>
+        <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Last Updated</div>
+        <div><%= new Date(banner.updatedAt).toLocaleDateString('en-IN') %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Image preview
+  document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('input[type="file"][name="image"]');
+    if (fileInput) {
+      fileInput.addEventListener('change', function(e) {
+        const preview = document.getElementById('bannerPreview');
+        preview.innerHTML = '';
+        
+        Array.from(e.target.files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            const div = document.createElement('div');
+            div.className = 'img-preview-item';
+            div.innerHTML = `<img src="${event.target.result}" style="width:100%; height:auto; border:1px solid var(--border); border-radius:4px;">`;
+            preview.appendChild(div);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+    }
+  });
+</script>

@@ -1,0 +1,185 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Announcements</h1>
+    <p class="page-sub"><%= announcements.length %> announcements configured</p>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 400px; gap:20px; align-items:start;">
+
+  <!-- Left: Announcements List -->
+  <div class="card" style="margin-bottom:0">
+    <div class="card-header">
+      <span class="card-title">All Announcements</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 60px;">Order</th>
+            <th>Preview</th>
+            <th>Schedule</th>
+            <th>Status</th>
+            <th style="width: 150px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (announcements.length > 0) { %>
+            <% announcements.forEach(a => { %>
+            <tr>
+              <td style="color:var(--text3); font-weight:600;"><%= a.order %></td>
+              <td>
+                <div style="background: <%= a.bgColor || '#d4af37' %>; color: <%= a.textColor || '#0f0f0f' %>; padding: 10px 16px; border-radius: 4px; font-weight: 500; font-size: 13px; text-align: center; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <% if (a.link) { %>
+                    <a href="<%= a.link %>" target="_blank" style="color: inherit; text-decoration: underline;"><%= a.message %></a>
+                  <% } else { %>
+                    <%= a.message %>
+                  <% } %>
+                </div>
+              </td>
+              <td style="font-size:12px; color:var(--text3); line-height: 1.4;">
+                <% if (a.startDate || a.endDate) { %>
+                  <% if (a.startDate) { %>
+                    <div>Start: <%= new Date(a.startDate).toLocaleDateString('en-IN') %></div>
+                  <% } %>
+                  <% if (a.endDate) { %>
+                    <div>End: <%= new Date(a.endDate).toLocaleDateString('en-IN') %></div>
+                  <% } %>
+                <% } else { %>
+                  <span style="color:var(--text3)">Always Visible</span>
+                <% } %>
+              </td>
+              <td>
+                <span class="badge <%= a.isActive ? 'badge-green' : 'badge-gray' %>">
+                  <%= a.isActive ? 'Active' : 'Inactive' %>
+                </span>
+              </td>
+              <td>
+                <div style="display:flex; gap:6px;">
+                  <a href="/admin/announcements/edit/<%= a._id %>" class="btn btn-ghost btn-sm">Edit</a>
+                  <a href="/admin/announcements/toggle/<%= a._id %>" class="btn btn-ghost btn-sm <%= a.isActive ? 'btn-warning' : 'btn-success' %>">
+                    <%= a.isActive ? 'Deactivate' : 'Activate' %>
+                  </a>
+                  <a href="/admin/announcements/delete/<%= a._id %>"
+                     class="btn btn-danger btn-sm"
+                     onclick="return confirm('Delete this announcement?')">Del</a>
+                </div>
+              </td>
+            </tr>
+            <% }); %>
+          <% } else { %>
+          <tr>
+            <td colspan="5" style="text-align:center;padding:60px;color:var(--text3);">
+              No announcements configured. Create one on the right to start!
+            </td>
+          </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Right: Add Form & Live Preview -->
+  <div>
+    <div class="card" style="margin-bottom: 20px;">
+      <div class="card-header"><span class="card-title">Live Preview</span></div>
+      <div class="card-body" style="padding: 20px; display: flex; justify-content: center; align-items: center; background: #1a1a1a;">
+        <div id="liveAnnouncementBar" style="width: 100%; background: #d4af37; color: #0f0f0f; padding: 12px 20px; border-radius: 4px; font-weight: 500; font-size: 14px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+          <span id="previewText">Announcement message will appear here</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><span class="card-title">Add New Announcement</span></div>
+      <div class="card-body">
+        <form method="POST" action="/admin/announcements/add">
+          <div class="field">
+            <label>Announcement Message <span>*</span></label>
+            <input type="text" name="message" id="inputMessage" placeholder="e.g. Free shipping on orders over ₹999!" required />
+          </div>
+          
+          <div class="field">
+            <label>Link URL (Optional)</label>
+            <input type="url" name="link" placeholder="e.g. https://example.com/sale" />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="field">
+              <label>Background Color</label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="color" name="bgColor" id="inputBgColor" value="#d4af37" style="width: 40px; height: 38px; padding: 0; border: 1px solid var(--border); border-radius: 4px; cursor: pointer;" />
+                <input type="text" id="textBgColor" value="#d4af37" style="flex: 1;" readonly />
+              </div>
+            </div>
+            <div class="field">
+              <label>Text Color</label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="color" name="textColor" id="inputTextColor" value="#0f0f0f" style="width: 40px; height: 38px; padding: 0; border: 1px solid var(--border); border-radius: 4px; cursor: pointer;" />
+                <input type="text" id="textTextColor" value="#0f0f0f" style="flex: 1;" readonly />
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="field">
+              <label>Start Date (Optional)</label>
+              <input type="date" name="startDate" />
+            </div>
+            <div class="field">
+              <label>End Date (Optional)</label>
+              <input type="date" name="endDate" />
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="field">
+              <label>Display Order</label>
+              <input type="number" name="order" value="0" min="0" required />
+            </div>
+            <div class="field">
+              <label>Status</label>
+              <select name="isActive">
+                <option value="on">Active</option>
+                <option value="off">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+            Add Announcement
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const inputMessage = document.getElementById('inputMessage');
+    const inputBgColor = document.getElementById('inputBgColor');
+    const textBgColor = document.getElementById('textBgColor');
+    const inputTextColor = document.getElementById('inputTextColor');
+    const textTextColor = document.getElementById('textTextColor');
+    
+    const liveBar = document.getElementById('liveAnnouncementBar');
+    const previewText = document.getElementById('previewText');
+
+    function updatePreview() {
+      previewText.textContent = inputMessage.value.trim() || 'Announcement message will appear here';
+      liveBar.style.backgroundColor = inputBgColor.value;
+      liveBar.style.color = inputTextColor.value;
+      textBgColor.value = inputBgColor.value.toUpperCase();
+      textTextColor.value = inputTextColor.value.toUpperCase();
+    }
+
+    inputMessage.addEventListener('input', updatePreview);
+    inputBgColor.addEventListener('input', updatePreview);
+    inputTextColor.addEventListener('input', updatePreview);
+    
+    // Initial preview setup
+    updatePreview();
+  });
+</script>

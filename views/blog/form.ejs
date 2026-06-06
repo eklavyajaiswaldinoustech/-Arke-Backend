@@ -1,0 +1,124 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><%= blog ? 'Edit Post' : 'New Blog Post' %></h1>
+    <p class="page-sub"><%= blog ? 'Update blog post details and content' : 'Create a new blog post' %></p>
+  </div>
+</div>
+
+<form method="POST" action="<%= blog ? '/admin/blog/edit/'+blog._id : '/admin/blog/add' %>" enctype="multipart/form-data">
+  <div style="display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start;">
+
+    <!-- Left: Content -->
+    <div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Post Content</span></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Title <span>*</span></label>
+            <input type="text" name="title" value="<%= blog ? blog.title : '' %>" placeholder="Post title…" required />
+          </div>
+          <div class="field">
+            <label>Excerpt / Summary</label>
+            <textarea name="excerpt" rows="2" placeholder="Short summary shown on the blog listing…"><%= blog ? blog.excerpt : '' %></textarea>
+          </div>
+          <div class="field">
+            <label>Content <span>*</span></label>
+            <textarea name="content" rows="16" placeholder="Write your blog post here… HTML is supported." required><%= blog ? blog.content : '' %></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Sidebar -->
+    <div>
+      <!-- Publish Settings -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><span class="card-title">Publish Settings</span></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Status</label>
+            <select name="isPublished">
+              <option value="true" <%= !blog || blog.isPublished ? 'selected':'' %>>Published</option>
+              <option value="false" <%= blog && !blog.isPublished ? 'selected':'' %>>Draft</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Category</label>
+            <input type="text" name="category" value="<%= blog ? blog.category : '' %>" placeholder="Jewellery, Style, Care…" />
+          </div>
+          <div class="field">
+            <label>Tags (comma-separated)</label>
+            <input type="text" name="tags" value="<%= blog && blog.tags ? blog.tags.join(', ') : '' %>" placeholder="gold, minimal, gifting" />
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:16px;">
+            <%= blog ? 'Update Post' : 'Publish Post' %>
+          </button>
+        </div>
+      </div>
+
+      <!-- Featured Image -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><span class="card-title">Featured Image</span></div>
+        <div class="card-body">
+          <% if (blog && (blog.image || blog.thumbnail)) { %>
+          <div style="margin-bottom:12px;">
+            <img src="<%= blog.image || blog.thumbnail %>" style="width:100%; height:140px; object-fit:cover; border:1px solid var(--border); border-radius:4px;" />
+            <div style="font-size:11px; color:var(--text3); margin-top:6px;">Current image</div>
+          </div>
+          <% } %>
+          <div class="upload-area">
+            <div style="font-size:28px; color:var(--text3); margin-bottom:8px;">◇</div>
+            <div class="upload-text">Upload featured image</div>
+            <div style="font-size:10px; color:var(--text3); margin-top:4px;">Recommended: 1200×630px</div>
+            <input type="file" name="image" accept="image/*" data-preview="blogImgPreview" />
+          </div>
+          <div id="blogImgPreview" class="img-preview-grid"></div>
+        </div>
+      </div>
+
+      <!-- SEO -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">SEO Settings</span></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Meta Title</label>
+            <input type="text" name="metaTitle" value="<%= blog ? blog.metaTitle : '' %>" placeholder="SEO title" />
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Meta Description</label>
+            <textarea name="metaDescription" rows="3" placeholder="SEO description…"><%= blog ? blog.metaDescription : '' %></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Panel -->
+      <% if (blog) { %>
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header"><span class="card-title">Info</span></div>
+        <div class="card-body" style="font-size:12px; color:var(--text3); line-height:1.8;">
+          <div style="margin-bottom:12px;">
+            <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Post ID</div>
+            <div style="font-family:monospace; font-size:11px;"><%= blog._id %></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Status</div>
+            <div><span class="badge <%= blog.isPublished ? 'badge-green' : 'badge-gray' %>"><%= blog.isPublished ? 'Published' : 'Draft' %></span></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Views</div>
+            <div><%= blog.views || 0 %></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Created</div>
+            <div><%= new Date(blog.createdAt).toLocaleDateString('en-IN') %></div>
+          </div>
+          <div>
+            <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Last Updated</div>
+            <div><%= new Date(blog.updatedAt).toLocaleDateString('en-IN') %></div>
+          </div>
+        </div>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</form>

@@ -1,0 +1,86 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Orders</h1>
+    <p class="page-sub"><%= orders.length %> total orders</p>
+  </div>
+  <div style="display:flex; gap:8px; align-items:center;">
+    <select class="filter-select" onchange="window.location='/admin/orders?status='+this.value">
+      <option value="">All Status</option>
+      <% ['pending','processing','shipped','delivered','cancelled'].forEach(s => { %>
+      <option value="<%= s %>" <%= currentStatus===s ? 'selected':'' %>><%= s.charAt(0).toUpperCase()+s.slice(1) %></option>
+      <% }); %>
+    </select>
+  </div>
+</div>
+
+<!-- Summary pills -->
+<div style="display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap;">
+  <% const pills = [
+    {label:'All', val:'', count: orders.length},
+    {label:'Pending', val:'pending', count: orders.filter(o=>o.status==='pending').length},
+    {label:'Processing', val:'processing', count: orders.filter(o=>o.status==='processing').length},
+    {label:'Shipped', val:'shipped', count: orders.filter(o=>o.status==='shipped').length},
+    {label:'Delivered', val:'delivered', count: orders.filter(o=>o.status==='delivered').length},
+    {label:'Cancelled', val:'cancelled', count: orders.filter(o=>o.status==='cancelled').length},
+  ]; %>
+  <% pills.forEach(p => { %>
+  <a href="/admin/orders?status=<%= p.val %>" style="padding:6px 16px; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; text-decoration:none; border:1px solid var(--border2); color:<%= currentStatus===p.val ? 'var(--gold)' : 'var(--text3)' %>; background:<%= currentStatus===p.val ? 'rgba(184,151,63,0.08)' : 'transparent' %>; transition:all 0.15s;">
+    <%= p.label %> <span style="margin-left:6px; font-size:10px;">(<%= p.count %>)</span>
+  </a>
+  <% }); %>
+</div>
+
+<div class="filter-bar">
+  <div class="search-box" style="max-width:280px;">
+    <input type="text" id="tableSearch" placeholder="Search by order ID or customer…" />
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Items</th>
+          <th>Amount</th>
+          <th>Payment</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (orders.length > 0) { %>
+          <% orders.forEach(order => { %>
+          <tr>
+            <td style="color:var(--gold); font-size:12px; font-weight:500;">#<%= (order._id+'').slice(-8).toUpperCase() %></td>
+            <td>
+              <div style="color:var(--text); font-size:13px;"><%= order.user ? (order.user.name || '—') : '—' %></div>
+              <div style="font-size:11px; color:var(--text3);"><%= order.user ? order.user.email : '' %></div>
+            </td>
+            <td style="color:var(--text2);"><%= order.items ? order.items.length : 0 %> items</td>
+            <td style="color:var(--text); font-weight:500;">₹<%= (order.totalAmount||0).toLocaleString() %></td>
+            <td>
+              <span class="badge <%= order.paymentStatus==='paid' ? 'badge-green' : 'badge-gold' %>">
+                <%= order.paymentStatus || 'pending' %>
+              </span>
+            </td>
+            <td>
+              <% const sc = {pending:'badge-gold',processing:'badge-blue',shipped:'badge-blue',delivered:'badge-green',cancelled:'badge-red'}; %>
+              <span class="badge <%= sc[order.status] || 'badge-gray' %>"><%= order.status || 'pending' %></span>
+            </td>
+            <td style="color:var(--text3); font-size:12px;"><%= new Date(order.createdAt).toLocaleDateString('en-IN') %></td>
+            <td>
+              <a href="/admin/orders/<%= order._id %>" class="btn btn-ghost btn-sm">View</a>
+            </td>
+          </tr>
+          <% }); %>
+        <% } else { %>
+        <tr><td colspan="8" style="text-align:center;padding:60px;color:var(--text3);">No orders found.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

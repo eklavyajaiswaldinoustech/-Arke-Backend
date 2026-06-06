@@ -1,0 +1,252 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">🎁 Gift For Him</h1>
+    <p class="page-sub">Manage gift page settings, personas, and curated products</p>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start;">
+
+  <!-- Left: Main Content -->
+  <div>
+    <!-- Page Settings -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><span class="card-title">Page Settings</span></div>
+      <div class="card-body">
+        <form method="POST" action="/admin/gift-for-him/settings">
+          <div class="field">
+            <label>Page Title</label>
+            <input type="text" name="title" value="<%= giftPage?.title || '' %>" placeholder="e.g. Gifts For Him" />
+          </div>
+          <div class="field">
+            <label>Subtitle</label>
+            <input type="text" name="subtitle" value="<%= giftPage?.subtitle || '' %>" placeholder="e.g. Curated gifts for the special men in your life" />
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <textarea name="description" rows="3" placeholder="Page description..."><%= giftPage?.description || '' %></textarea>
+          </div>
+          <div class="field">
+            <label>Badge Text</label>
+            <input type="text" name="badgeText" value="<%= giftPage?.badgeText || '' %>" placeholder="e.g. New Collection" />
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Save Settings</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Personas -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><span class="card-title">Personas</span></div>
+      <div class="card-body">
+        <% if (tags && tags.length > 0) { %>
+        <div style="margin-bottom:20px;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border2);">
+                <th style="text-align:left; padding:10px; color:var(--text2);">Persona</th>
+                <th style="text-align:left; padding:10px; color:var(--text2);">Icon</th>
+                <th style="text-align:left; padding:10px; color:var(--text2);">Description</th>
+                <th style="text-align:left; padding:10px; color:var(--text2);">Status</th>
+                <th style="text-align:right; padding:10px; color:var(--text2);">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% tags.forEach(tag => { %>
+              <tr style="border-bottom:1px solid var(--border2);">
+                <td style="padding:10px;"><%= tag.label %></td>
+                <td style="padding:10px; font-size:18px;"><%= tag.icon %></td>
+                <td style="padding:10px; font-size:12px; color:var(--text3);"><%= tag.desc || '-' %></td>
+                <td style="padding:10px;">
+                  <span class="badge <%= tag.isActive ? 'badge-green' : 'badge-gray' %>">
+                    <%= tag.isActive ? 'Active' : 'Inactive' %>
+                  </span>
+                </td>
+                <td style="padding:10px; text-align:right;">
+                  <a href="/admin/gift-for-him/tags/toggle/<%= tag._id %>" class="btn btn-ghost btn-sm">
+                    <%= tag.isActive ? 'Deactivate' : 'Activate' %>
+                  </a>
+                  <a href="/admin/gift-for-him/tags/delete/<%= tag._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Delete this persona?')">Delete</a>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } else { %>
+        <div style="text-align:center; padding:20px; color:var(--text3);">No personas added yet</div>
+        <% } %>
+
+        <form method="POST" action="/admin/gift-for-him/tags/add" style="border-top:1px solid var(--border2); padding-top:16px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+            <div class="field" style="margin-bottom:0;">
+              <label>Persona Name</label>
+              <input type="text" name="label" placeholder="e.g. The Adventurer" required />
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label>Icon</label>
+              <input type="text" name="icon" placeholder="e.g. 🏔️" value="◈" />
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:12px;">
+            <label>Description</label>
+            <input type="text" name="desc" placeholder="e.g. For the man who loves outdoor adventures" />
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Add Persona</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><span class="card-title">Filters</span></div>
+      <div class="card-body">
+        <% if (filters && filters.length > 0) { %>
+        <div style="margin-bottom:20px;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border2);">
+                <th style="text-align:left; padding:10px; color:var(--text2);">Filter Name</th>
+                <th style="text-align:left; padding:10px; color:var(--text2);">Value</th>
+                <th style="text-align:left; padding:10px; color:var(--text2);">Status</th>
+                <th style="text-align:right; padding:10px; color:var(--text2);">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% filters.forEach(filter => { %>
+              <tr style="border-bottom:1px solid var(--border2);">
+                <td style="padding:10px;"><%= filter.label %></td>
+                <td style="padding:10px; font-size:12px; color:var(--text3);"><%= filter.value %></td>
+                <td style="padding:10px;">
+                  <span class="badge <%= filter.isActive ? 'badge-green' : 'badge-gray' %>">
+                    <%= filter.isActive ? 'Active' : 'Inactive' %>
+                  </span>
+                </td>
+                <td style="padding:10px; text-align:right;">
+                  <a href="/admin/gift-for-him/filters/toggle/<%= filter._id %>" class="btn btn-ghost btn-sm">
+                    <%= filter.isActive ? 'Deactivate' : 'Activate' %>
+                  </a>
+                  <a href="/admin/gift-for-him/filters/delete/<%= filter._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Delete this filter?')">Delete</a>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } else { %>
+        <div style="text-align:center; padding:20px; color:var(--text3);">No filters added yet</div>
+        <% } %>
+
+        <form method="POST" action="/admin/gift-for-him/filters/add" style="border-top:1px solid var(--border2); padding-top:16px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+            <div class="field" style="margin-bottom:0;">
+              <label>Filter Name</label>
+              <input type="text" name="label" placeholder="e.g. Price Range" required />
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label>Value</label>
+              <input type="text" name="value" placeholder="e.g. under-500" required />
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label>Order</label>
+              <input type="number" name="order" value="0" min="0" />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:12px;">Add Filter</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Curated Products -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Curated Products</span></div>
+      <div class="card-body">
+        <% if (products && products.length > 0) { %>
+        <div style="margin-bottom:20px;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px;">
+            <% products.forEach(gp => { %>
+            <div style="border:1px solid var(--border); border-radius:6px; padding:12px; text-align:center;">
+              <% if (gp.product?.images?.[0]) { %>
+              <img src="<%= gp.product.images[0] %>" style="width:100%; height:120px; object-fit:cover; border-radius:4px; margin-bottom:8px;" />
+              <% } %>
+              <div style="font-size:12px; color:var(--text2); margin-bottom:8px; font-weight:500;"><%= gp.product?.name || 'Unknown' %></div>
+              <div style="display:flex; gap:6px; justify-content:center;">
+                <a href="/admin/gift-for-him/products/toggle/<%= gp._id %>" class="btn btn-ghost btn-sm" style="font-size:11px;">
+                  <%= gp.isActive ? 'Hide' : 'Show' %>
+                </a>
+                <a href="/admin/gift-for-him/products/delete/<%= gp._id %>" class="btn btn-danger btn-sm" style="font-size:11px;" onclick="return confirm('Remove this product?')">Remove</a>
+              </div>
+            </div>
+            <% }); %>
+          </div>
+        </div>
+        <% } else { %>
+        <div style="text-align:center; padding:20px; color:var(--text3);">No products added yet</div>
+        <% } %>
+
+        <form method="POST" action="/admin/gift-for-him/products/add" style="border-top:1px solid var(--border2); padding-top:16px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="field" style="margin-bottom:0;">
+              <label>Product</label>
+              <select name="product" required>
+                <option value="">Select a product</option>
+                <% if (allProducts && allProducts.length > 0) { %>
+                  <% allProducts.forEach(p => { %>
+                  <option value="<%= p._id %>"><%= p.name %> (₹<%= p.price %>)</option>
+                  <% }); %>
+                <% } else { %>
+                  <option value="" disabled>No products available</option>
+                <% } %>
+              </select>
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label>Order</label>
+              <input type="number" name="order" value="0" min="0" />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:12px;">Add Product</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Info Panel -->
+  <div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Info</span></div>
+      <div class="card-body" style="font-size:12px; color:var(--text3); line-height:1.8;">
+        <div style="margin-bottom:16px;">
+          <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Page Type</div>
+          <div>Gift For Him</div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Status</div>
+          <div><span class="badge <%= giftPage?.isActive ? 'badge-green' : 'badge-gray' %>"><%= giftPage?.isActive ? 'Active' : 'Inactive' %></span></div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Personas</div>
+          <div><%= tags?.length || 0 %></div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Filters</div>
+          <div><%= filters?.length || 0 %></div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Products</div>
+          <div><%= products?.length || 0 %></div>
+        </div>
+        <% if (giftPage) { %>
+        <div style="margin-bottom:16px;">
+          <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Created</div>
+          <div><%= new Date(giftPage.createdAt).toLocaleDateString('en-IN') %></div>
+        </div>
+        <div>
+          <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Last Updated</div>
+          <div><%= new Date(giftPage.updatedAt).toLocaleDateString('en-IN') %></div>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+</div>

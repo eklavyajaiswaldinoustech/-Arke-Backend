@@ -1,0 +1,205 @@
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h2 class="h4 mb-0">
+        <i class="fas fa-university me-2"></i>Bank Details Management
+      </h2>
+      <p class="text-muted small mt-1">Total: <%= total %> records</p>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="/admin/bank-details/export/csv" class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-download me-2"></i>Export CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- Search Form -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" class="row g-3">
+        <div class="col-md-8">
+          <input 
+            type="text" 
+            name="search" 
+            class="form-control" 
+            placeholder="Search by name, email, or phone..."
+            value="<%= search %>"
+          >
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-search me-2"></i>Search
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bank Details Table -->
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">Account Holder</th>
+            <th>Bank Name</th>
+            <th>Account Number</th>
+            <th>IFSC Code</th>
+            <th>User Email</th>
+            <th>Verified</th>
+            <th>Date Added</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (bankDetails.length === 0) { %>
+            <tr>
+              <td colspan="8" class="text-center py-5 text-muted">
+                <i class="fas fa-inbox fa-2x mb-3 d-block opacity-50"></i>
+                No bank details found
+              </td>
+            </tr>
+          <% } else { %>
+            <% bankDetails.forEach(bd => { %>
+              <tr>
+                <td class="ps-4">
+                  <strong><%= bd.accountHolderName %></strong>
+                  <br>
+                  <small class="text-muted"><%= bd.user.name %></small>
+                </td>
+                <td><%= bd.bankName %></td>
+                <td>
+                  <code class="bg-light px-2 py-1 rounded"><%= bd.accountNumber %></code>
+                </td>
+                <td><%= bd.ifscCode %></td>
+                <td><%= bd.user.email %></td>
+                <td>
+                  <% if (bd.isVerified) { %>
+                    <span class="badge bg-success">
+                      <i class="fas fa-check-circle me-1"></i>Verified
+                    </span>
+                  <% } else { %>
+                    <span class="badge bg-warning text-dark">
+                      <i class="fas fa-clock me-1"></i>Pending
+                    </span>
+                  <% } %>
+                </td>
+                <td>
+                  <small class="text-muted">
+                    <%= new Date(bd.createdAt).toLocaleDateString('en-IN', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    }) %>
+                  </small>
+                </td>
+                <td class="text-end pe-4">
+                  <div class="btn-group btn-group-sm" role="group">
+                    <a 
+                      href="/admin/bank-details/view/<%= bd._id %>" 
+                      class="btn btn-outline-primary"
+                      title="View Details"
+                    >
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    <% if (!bd.isVerified) { %>
+                      <button 
+                        class="btn btn-outline-success"
+                        onclick="verifyBankDetails('<%= bd._id %>')"
+                        title="Verify"
+                      >
+                        <i class="fas fa-check"></i>
+                      </button>
+                    <% } %>
+                    <button 
+                      class="btn btn-outline-danger"
+                      onclick="deleteBankDetails('<%= bd._id %>')"
+                      title="Delete"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <% if (pages > 1) { %>
+    <nav aria-label="Page navigation" class="mt-4">
+      <ul class="pagination justify-content-center">
+        <% for (let i = 1; i <= pages; i++) { %>
+          <li class="page-item <% if (i === page) { %>active<% } %>">
+            <a 
+              class="page-link" 
+              href="?page=<%= i %><% if (search) { %>&search=<%= encodeURIComponent(search) %><% } %>"
+            >
+              <%= i %>
+            </a>
+          </li>
+        <% } %>
+      </ul>
+    </nav>
+  <% } %>
+</div>
+
+<style>
+  .table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,0.02);
+  }
+  
+  code {
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+  }
+</style>
+
+<script>
+function verifyBankDetails(id) {
+  if (!confirm('Verify this bank account?')) return;
+  
+  fetch(`/admin/bank-details/verify/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert('Bank details verified successfully');
+      location.reload();
+    } else {
+      alert(data.message || 'Failed to verify');
+    }
+  })
+  .catch(e => {
+    console.error(e);
+    alert('An error occurred');
+  });
+}
+
+function deleteBankDetails(id) {
+  if (!confirm('Delete this bank account permanently? This cannot be undone.')) return;
+  
+  fetch(`/admin/bank-details/${id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert('Bank details deleted successfully');
+      location.reload();
+    } else {
+      alert(data.message || 'Failed to delete');
+    }
+  })
+  .catch(e => {
+    console.error(e);
+    alert('An error occurred');
+  });
+}
+</script>

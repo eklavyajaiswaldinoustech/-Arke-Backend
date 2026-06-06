@@ -1,0 +1,166 @@
+CART API - QUICK REFERENCE
+================================
+
+BASE URL: http://localhost:5050/api/cart
+
+All endpoints require Authorization header:
+  -H "Authorization: Bearer <token>"
+
+
+ENDPOINTS SUMMARY
+=================
+
+1. GET /
+   └─ Get user's cart
+   └─ Returns: Cart object with items, totals, applied coupon
+
+2. POST /add-to-cart
+   ├─ Request: { productId, quantity }
+   ├─ Adds product or increases quantity if already in cart
+   └─ Validates: product exists, product is active, stock available
+
+3. POST /remove-from-cart
+   ├─ Request: { productId }
+   └─ Removes product from cart
+
+4. POST /update-quantity
+   ├─ Request: { productId, quantity }
+   ├─ Updates product quantity in cart
+   └─ Validates: stock available, quantity >= 1
+
+5. POST /apply-coupon
+   ├─ Request: { couponCode }
+   ├─ Applies coupon for discount
+   └─ Validates: coupon valid, not expired, min order met, max uses not exceeded
+
+6. POST /remove-coupon
+   └─ Removes applied coupon from cart
+
+7. POST /clear
+   └─ Removes all items and coupon from cart
+
+8. GET /summary
+   └─ Get simplified cart summary for checkout page
+   └─ Returns: itemCount, items[], subtotal, discount, shipping, total, appliedCoupon
+
+
+EXAMPLE REQUESTS
+================
+
+Add to Cart:
+  curl -X POST http://localhost:5050/api/cart/add-to-cart \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{"productId":"507f1f77bcf86cd799439014","quantity":2}'
+
+Get Cart:
+  curl -X GET http://localhost:5050/api/cart \
+    -H "Authorization: Bearer <token>"
+
+Apply Coupon:
+  curl -X POST http://localhost:5050/api/cart/apply-coupon \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{"couponCode":"SAVE10"}'
+
+Get Summary (for Checkout):
+  curl -X GET http://localhost:5050/api/cart/summary \
+    -H "Authorization: Bearer <token>"
+
+
+RESPONSE FORMAT
+===============
+
+Success:
+  {
+    "success": true,
+    "message": "...",
+    "data": { ... }
+  }
+
+Error:
+  {
+    "success": false,
+    "message": "..."
+  }
+
+
+CART CALCULATIONS
+=================
+
+Subtotal = Sum of (product.price × item.quantity)
+
+Discount Amount:
+  - Percentage: (subtotal × coupon.discountValue) / 100
+  - Fixed: min(coupon.discountValue, subtotal)
+
+Shipping:
+  - ₹0 if subtotal >= ₹999
+  - ₹99 if subtotal < ₹999
+
+Total = subtotal - discountAmount + shipping
+
+
+STATUS CODES
+============
+
+200 ✓ Success
+400 ✗ Bad Request (invalid input, product not found, etc.)
+401 ✗ Unauthorized (invalid/missing token)
+404 ✗ Not Found (cart/product not in cart)
+500 ✗ Server Error
+
+
+FRONTEND INTEGRATION
+====================
+
+// Add to cart
+const res = await fetch('http://localhost:5050/api/cart/add-to-cart', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({ productId, quantity })
+});
+
+// Get cart
+const res = await fetch('http://localhost:5050/api/cart', {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+
+// Get cart summary
+const res = await fetch('http://localhost:5050/api/cart/summary', {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+
+// Apply coupon
+const res = await fetch('http://localhost:5050/api/cart/apply-coupon', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({ couponCode })
+});
+
+
+VALIDATION RULES
+================
+
+Product ID:
+  - Must be valid MongoDB ObjectId
+  - Product must exist in database
+  - Product must be active (isActive: true)
+
+Quantity:
+  - Minimum: 1
+  - Cannot exceed available stock
+  - When adding to existing item, new total cannot exceed stock
+
+Coupon Code:
+  - Case-insensitive (automatically converted to uppercase)
+  - Must exist and be active
+  - Must not be expired
+  - Must meet minimum order value requirement
+  - Must not exceed maximum usage limit

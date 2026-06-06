@@ -1,0 +1,113 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Categories</h1>
+    <p class="page-sub"><%= categories.length %> categories configured</p>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start;">
+
+  <!-- Category list -->
+  <div class="card" style="margin-bottom:0">
+    <div class="card-header">
+      <span class="card-title">All Categories</span>
+      <div class="search-box" style="width:220px;">
+        <input type="text" id="tableSearch" placeholder="Search…" />
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Slug</th>
+            <th>Products</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (categories.length > 0) { %>
+            <% categories.forEach(c => { %>
+            <tr>
+              <td>
+                <% if (c.image) { %>
+                  <img src="<%= c.image %>" class="thumb" />
+                <% } else { %>
+                  <div class="thumb-placeholder">◉</div>
+                <% } %>
+              </td>
+              <td style="color:var(--text); font-weight:500;"><%= c.name %></td>
+              <td style="color:var(--text3); font-size:12px;"><%= c.slug || '—' %></td>
+              <td><span class="badge badge-gray"><%= c.productCount || 0 %></span></td>
+              <td><span class="badge <%= c.isActive ? 'badge-green' : 'badge-gray' %>"><%= c.isActive ? 'Active' : 'Hidden' %></span></td>
+              <td>
+                <div style="display:flex; gap:6px;">
+                  <a href="/admin/categories/edit/<%= c._id %>" class="btn btn-ghost btn-sm">Edit</a>
+                  <a href="/admin/categories/delete/<%= c._id %>"
+                     class="btn btn-danger btn-sm"
+                     data-confirm="Delete '<%= c.name %>'?">Del</a>
+                </div>
+              </td>
+            </tr>
+            <% }); %>
+          <% } else { %>
+          <tr><td colspan="6" style="text-align:center;padding:60px;color:var(--text3);">
+            No categories yet.
+          </td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add/Edit form -->
+  <div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><span class="card-title"><%= editCat ? 'Edit Category' : 'Add New Category' %></span></div>
+      <div class="card-body">
+        <form method="POST" action="<%= editCat ? '/admin/categories/edit/'+editCat._id : '/admin/categories/' %>" enctype="multipart/form-data">
+          <div class="field">
+            <label>Category Name <span>*</span></label>
+            <input type="text" name="name" value="<%= editCat ? editCat.name : '' %>" placeholder="e.g. Earrings" required />
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <textarea name="description" rows="3" placeholder="Short description…"><%= editCat ? editCat.description : '' %></textarea>
+          </div>
+          <div class="field">
+            <label>Category Image</label>
+            <% if (editCat && editCat.image) { %>
+            <div style="margin-bottom:10px;">
+              <img src="<%= editCat.image %>" style="width:80px; height:80px; object-fit:cover; border:1px solid var(--border);" />
+            </div>
+            <% } %>
+            <div class="upload-area" style="padding:16px;">
+              <div style="font-size:22px; color:var(--text3); margin-bottom:6px;">◇</div>
+              <div class="upload-text">Upload category image</div>
+              <input type="file" name="image" accept="image/*" data-preview="catPreview" />
+            </div>
+            <div id="catPreview" class="img-preview-grid"></div>
+          </div>
+          <div class="field">
+            <label>Status</label>
+            <select name="isActive">
+              <option value="true" <%= !editCat || editCat.isActive ? 'selected':'' %>>Active</option>
+              <option value="false" <%= editCat && !editCat.isActive ? 'selected':'' %>>Hidden</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="submit" class="btn btn-primary" style="flex:1; justify-content:center;">
+              <%= editCat ? 'Update' : 'Add Category' %>
+            </button>
+            <% if (editCat) { %>
+            <a href="/admin/categories" class="btn btn-ghost">Cancel</a>
+            <% } %>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>

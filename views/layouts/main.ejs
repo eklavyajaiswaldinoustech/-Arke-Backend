@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= typeof title !== 'undefined' ? title : 'Dashboard' %> — ARKE Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body>
+<div class="admin-wrap">
+
+  <!-- Sidebar -->
+  <aside class="sidebar glass">
+    <div class="sidebar-brand">
+      <span class="sidebar-logo">ARK<span>E</span></span>
+      <span class="admin-badge">Admin</span>
+    </div>
+    <nav style="flex:1; overflow-y:auto; padding:10px 0;">
+      <div class="sidebar-section">Main</div>
+      <% const activePage = typeof navPage !== 'undefined' ? navPage : (typeof page !== 'undefined' ? page : ''); %>
+      <a href="/admin" class="nav-item <%= activePage==='dashboard' ? 'active' : '' %>">
+        <span class="nav-icon">▦</span> Dashboard
+      </a>
+      <div class="sidebar-section" style="margin-top:8px">Catalogue</div>
+      <a href="/admin/products" class="nav-item <%= activePage==='products' ? 'active' : '' %>">
+        <span class="nav-icon">◈</span> Products
+      </a>
+      <a href="/admin/categories" class="nav-item <%= activePage==='categories' ? 'active' : '' %>">
+        <span class="nav-icon">◉</span> Categories
+      </a>
+      <a href="/admin/banners" class="nav-item <%= activePage==='banners' ? 'active' : '' %>">
+        <span class="nav-icon">▣</span> Banners
+      </a>
+      <a href="/admin/coupons" class="nav-item <%= activePage==='coupons' ? 'active' : '' %>">
+        <span class="nav-icon">✂</span> Coupons
+      </a>
+      <div class="sidebar-section" style="margin-top:8px">Content</div>
+      <a href="/admin/announcements" class="nav-item <%= activePage==='announcements' ? 'active' : '' %>">
+        <span class="nav-icon">📢</span> Announcements
+      </a>
+      <a href="/admin/blog" class="nav-item <%= activePage==='blog' ? 'active' : '' %>">
+        <span class="nav-icon">✦</span> Blog
+      </a>
+      <div class="sidebar-section" style="margin-top:8px">Gifting</div>
+      <a href="/admin/gift-for-him" class="nav-item <%= activePage==='gift-him' ? 'active' : '' %>">
+        <span class="nav-icon">♂</span> Gift For Him
+      </a>
+      <a href="/admin/gift-for-her" class="nav-item <%= activePage==='gift-her' ? 'active' : '' %>">
+        <span class="nav-icon">♀</span> Gift For Her
+      </a>
+      <div class="sidebar-section" style="margin-top:8px">Store</div>
+      <a href="/admin/orders" class="nav-item <%= activePage==='orders' ? 'active' : '' %>">
+        <span class="nav-icon">◎</span> Orders
+      </a>
+      <a href="/admin/users" class="nav-item <%= activePage==='users' ? 'active' : '' %>">
+        <span class="nav-icon">◷</span> Users
+      </a>
+      <a href="/admin/bank-details" class="nav-item <%= activePage==='bank-details' ? 'active' : '' %>">
+        <span class="nav-icon">▤</span> Bank Details
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      <% if (typeof admin !== 'undefined' && admin) { %>
+      <div style="margin-bottom:12px;">
+        <div class="admin-name"><%= admin.name || 'Admin' %></div>
+        <div class="admin-email"><%= admin.email %></div>
+      </div>
+      <% } %>
+      <a href="/admin/logout" class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;">Sign Out</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);">
+          <span id="greeting">Welcome</span><% if (typeof admin !== 'undefined' && admin) { %>, <%= admin.name || 'Admin' %><% } %>
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px;">
+        <a href="http://localhost:3000" target="_blank" style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);text-decoration:none;">↗ Live Site</a>
+        <span style="font-size:11px;color:var(--text3);" id="topbar-time"></span>
+      </div>
+    </header>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+    <div style="padding:16px 32px 0;">
+      <div class="alert alert-success" data-auto>✓ &nbsp;<%= success %></div>
+    </div>
+    <% } %>
+    <% if (typeof error !== 'undefined' && error) { %>
+    <div style="padding:16px 32px 0;">
+      <div class="alert alert-error" data-auto>✕ &nbsp;<%= error %></div>
+    </div>
+    <% } %>
+
+    <div class="page-body">
+      <%- body %>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/js/admin.js"></script>
+<script>
+  const t = document.getElementById('topbar-time');
+  const tick = () => { if(t) t.textContent = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); };
+  tick(); setInterval(tick, 1000);
+  const h = new Date().getHours();
+  const g = document.getElementById('greeting');
+  if(g) g.textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+</script>
+</body>
+</html>

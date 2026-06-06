@@ -1,0 +1,88 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Banners</h1>
+    <p class="page-sub">Homepage hero banners — drag to reorder</p>
+  </div>
+ 
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start;">
+
+  <!-- Banner list -->
+  <div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><span class="card-title">Active Banners</span></div>
+      <div class="card-body" style="padding:0">
+        <% if (banners.length > 0) { %>
+        <% banners.forEach((b, i) => { %>
+        <div style="display:flex; gap:16px; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border2);">
+          <span style="color:var(--text3); font-size:12px; width:20px; text-align:center;"><%= i+1 %></span>
+          <% if (b.image) { %>
+            <img src="<%= b.image %>" style="width:120px; height:60px; object-fit:cover; border:1px solid var(--border);" />
+          <% } else { %>
+            <div style="width:120px; height:60px; background:var(--bg2); border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; color:var(--text3);">◇</div>
+          <% } %>
+          <div style="flex:1;">
+            <div style="color:var(--text); font-size:13px; font-weight:500; margin-bottom:3px;"><%= b.title || '(No title)' %></div>
+            <div style="color:var(--text3); font-size:11px; letter-spacing:0.3px;"><%= b.subtitle || b.description || '—' %></div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span class="badge <%= b.isActive ? 'badge-green' : 'badge-gray' %>"><%= b.isActive ? 'Live' : 'Hidden' %></span>
+            <a href="/admin/banners/edit/<%= b._id %>" class="btn btn-ghost btn-sm">Edit</a>
+            <a href="/admin/banners/delete/<%= b._id %>" class="btn btn-danger btn-sm btn-icon"
+               data-confirm="Remove this banner?">✕</a>
+          </div>
+        </div>
+        <% }); %>
+        <% } else { %>
+        <div style="text-align:center; padding:60px; color:var(--text3);">No banners yet. Add your first homepage banner.</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add form -->
+  <div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><span class="card-title">Add New Banner</span></div>
+      <div class="card-body">
+        <form method="POST" action="/admin/banners/add" enctype="multipart/form-data">
+          <div class="field">
+            <label>Banner Title</label>
+            <input type="text" name="title" placeholder="e.g. New Season Collection" />
+          </div>
+          <div class="field">
+            <label>Subtitle / Description</label>
+            <input type="text" name="subtitle" placeholder="Supporting text line" />
+          </div>
+          <div class="field">
+            <label>CTA Button Text</label>
+            <input type="text" name="ctaText" placeholder="Shop Now" />
+          </div>
+          <div class="field">
+            <label>CTA Link</label>
+            <input type="text" name="ctaLink" placeholder="/new-collection" />
+          </div>
+          <div class="field">
+            <label>Banner Image <span>*</span></label>
+            <div class="upload-area">
+              <div style="font-size:28px; color:var(--text3); margin-bottom:8px;">▣</div>
+              <div class="upload-text">Upload banner image</div>
+              <div style="font-size:10px; color:var(--text3); margin-top:4px;">Recommended: 1920×800px</div>
+              <input type="file" name="image" accept="image/*" required data-preview="bannerPreview" />
+            </div>
+            <div id="bannerPreview" class="img-preview-grid"></div>
+          </div>
+          <div class="field">
+            <label>Status</label>
+            <select name="isActive">
+              <option value="true">Active (Visible)</option>
+              <option value="false">Hidden</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Add Banner</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

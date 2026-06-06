@@ -1,0 +1,225 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><%= product ? 'Edit Product' : 'Add Product' %></h1>
+    <p class="page-sub"><%= product ? 'Update product details and images' : 'Add a new product to the Arke catalogue' %></p>
+  </div>
+  <a href="/admin/products" class="btn btn-ghost">← Back</a>
+</div>
+
+<form method="POST" action="<%= product ? '/admin/products/edit/'+product._id : '/admin/products/add' %>" enctype="multipart/form-data">
+
+  <div style="display:grid; grid-template-columns:1fr 340px; gap:20px; align-items:start;">
+
+    <!-- Left column -->
+    <div>
+      <!-- Basic Info -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Product Information</span></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field form-full">
+              <label>Product Name <span>*</span></label>
+              <input type="text" name="name" value="<%= product ? product.name : '' %>" placeholder="e.g. Pearl Drop Earrings" required />
+            </div>
+            <div class="field">
+              <label>Price (₹) <span>*</span></label>
+              <input type="number" name="price" value="<%= product ? product.price : '' %>" placeholder="999" required min="0" />
+            </div>
+            <div class="field">
+              <label>MRP / Original Price (₹)</label>
+              <input type="number" name="mrp" value="<%= product ? product.mrp : '' %>" placeholder="1499" min="0" />
+            </div>
+            <div class="field">
+              <label>SKU</label>
+              <input type="text" name="sku" value="<%= product ? product.sku : '' %>" placeholder="ARK-001" />
+            </div>
+            <div class="field">
+              <label>Stock Quantity <span>*</span></label>
+              <input type="number" name="stock" value="<%= product ? product.stock : '' %>" placeholder="100" required min="0" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Short Description</label>
+            <input type="text" name="shortDescription" value="<%= product ? product.shortDescription : '' %>" placeholder="One-line summary shown on product cards" />
+          </div>
+
+          <div class="field">
+            <label>Full Description</label>
+            <textarea name="description" rows="5" placeholder="Detailed product description, materials, care instructions..."><%= product ? product.description : '' %></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Specifications -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Specifications</span></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field">
+              <label>Material</label>
+              <input type="text" name="material" value="<%= product ? product.material : '' %>" placeholder="Sterling Silver, 18k Gold Plated…" />
+            </div>
+            <div class="field">
+              <label>Metal Type</label>
+              <select name="metalType">
+                <option value="">Select</option>
+                <% ['Gold Plated','Rose Gold','Silver','Oxidised'].forEach(m => { %>
+                <option value="<%= m %>" <%= product && product.metalType===m ? 'selected':'' %>><%= m %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="field">
+              <label>Weight (grams)</label>
+              <input type="number" name="weight" value="<%= product ? product.weight : '' %>" placeholder="5.2" step="0.01" min="0" />
+            </div>
+            <div class="field">
+              <label>Size</label>
+              <input type="text" name="size" value="<%= product ? product.size : '' %>" placeholder="Free size / S / M / L" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Tags (comma-separated)</label>
+            <input type="text" name="tags" value="<%= product && product.tags ? product.tags.join(', ') : '' %>" placeholder="earrings, pearl, gift, minimalist" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Images -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Product Images</span></div>
+        <div class="card-body">
+          <% if (product && product.images && product.images.length > 0) { %>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text3); display:block; margin-bottom:8px;">Current Images</label>
+            <div class="img-preview-grid">
+              <% product.images.forEach(img => { %>
+              <div class="img-preview-item"><img src="<%= img %>" /></div>
+              <% }); %>
+            </div>
+          </div>
+          <% } %>
+          <div class="upload-area">
+            <div class="upload-icon">◇</div>
+            <div class="upload-text">Click or drag images here (multiple allowed)</div>
+            <div style="font-size:10px; color:var(--text3); margin-top:4px; letter-spacing:1px;">JPG, PNG, WEBP — max 5MB each</div>
+            <input type="file" name="images" accept="image/*" multiple data-preview="imgPreview" />
+          </div>
+          <div class="img-preview-grid" id="imgPreview" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div>
+      <!-- Publish -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Publish</span></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Status <span>*</span></label>
+            <select name="isActive">
+              <option value="true" <%= !product || product.isActive ? 'selected' : '' %>>Active (Visible)</option>
+              <option value="false" <%= product && !product.isActive ? 'selected' : '' %>>Draft (Hidden)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Gift For</label>
+            <select name="giftFor">
+              <option value="">Not a gift product</option>
+              <option value="her" <%= product && product.giftFor === 'her' ? 'selected' : '' %>>Gift For Her</option>
+              <option value="him" <%= product && product.giftFor === 'him' ? 'selected' : '' %>>Gift For Him</option>
+            </select>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; color:var(--text2);">
+              <input type="checkbox" name="isFeatured" value="true" <%= product && product.isFeatured ? 'checked':'' %> style="width:auto; accent-color:var(--gold);" />
+              Featured product (shown in Best Sellers)
+            </label>
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; color:var(--text2);">
+              <input type="checkbox" name="isNewArrival" value="true" <%= product && product.isNewArrival ? 'checked':'' %> style="width:auto; accent-color:var(--gold);" />
+              New Arrival
+            </label>
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; color:var(--text2);">
+              <input type="checkbox" name="isBestSeller" value="true" <%= product && product.isBestSeller ? 'checked':'' %> style="width:auto; accent-color:var(--gold);" />
+              Best Seller
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px;">
+            <%= product ? 'Update Product' : 'Add Product' %>
+          </button>
+        </div>
+      </div>
+
+      <!-- Category -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Organisation</span></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Category <span>*</span></label>
+            <select name="category" required>
+              <option value="">Select Category</option>
+              <% categories.forEach(c => { %>
+              <option value="<%= c._id %>" <%= product && product.category && product.category.toString()===c._id.toString() ? 'selected':'' %>>
+                <%= c.name %>
+              </option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="field">
+            <label>Sub Category</label>
+            <select name="subCategory">
+              <option value="">Select Sub Category</option>
+              <% subCategories.forEach(s => { %>
+              <option value="<%= s._id %>" <%= product && product.subCategory && product.subCategory.toString()===s._id.toString() ? 'selected':'' %>>
+                <%= s.name %>
+              </option>
+              <% }); %>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEO -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">SEO</span></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Meta Title</label>
+            <input type="text" name="metaTitle" value="<%= product ? product.metaTitle : '' %>" placeholder="SEO page title" />
+          </div>
+          <div class="field">
+            <label>Meta Description</label>
+            <textarea name="metaDescription" rows="3" placeholder="SEO description…"><%= product ? product.metaDescription : '' %></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Panel -->
+      <% if (product) { %>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Info</span></div>
+        <div class="card-body" style="font-size:12px; color:var(--text3); line-height:1.8;">
+          <div style="margin-bottom:12px;">
+            <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Product ID</div>
+            <div style="font-family:monospace; font-size:11px;"><%= product._id %></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Status</div>
+            <div><span class="badge <%= product.isActive ? 'badge-green' : 'badge-gray' %>"><%= product.isActive ? 'Active' : 'Draft' %></span></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Created</div>
+            <div><%= new Date(product.createdAt).toLocaleDateString('en-IN') %></div>
+          </div>
+          <div>
+            <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Last Updated</div>
+            <div><%= new Date(product.updatedAt).toLocaleDateString('en-IN') %></div>
+          </div>
+        </div>
+      </div>
+      <% } %>
+    </div>
+
+  </div>
+</form>

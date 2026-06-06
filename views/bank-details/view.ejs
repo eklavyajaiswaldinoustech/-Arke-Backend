@@ -1,0 +1,288 @@
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h2 class="h4 mb-0">
+        <i class="fas fa-file-invoice me-2"></i><%= bankDetail.accountHolderName %>
+      </h2>
+      <p class="text-muted small mt-1">
+        Account at <%= bankDetail.bankName %> | 
+        <% if (bankDetail.isVerified) { %>
+          <span class="badge bg-success">Verified</span>
+        <% } else { %>
+          <span class="badge bg-warning">Pending Verification</span>
+        <% } %>
+      </p>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="/admin/bank-details" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-2"></i>Back to List
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Account Information -->
+    <div class="col-lg-8 mb-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-bottom">
+          <h5 class="mb-0">Account Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label class="form-label text-muted small text-uppercase fw-bold">Account Holder Name</label>
+              <p class="fs-5"><%= bankDetail.accountHolderName %></p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small text-uppercase fw-bold">Bank Name</label>
+              <p class="fs-5"><%= bankDetail.bankName %></p>
+            </div>
+          </div>
+
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label class="form-label text-muted small text-uppercase fw-bold">Account Number</label>
+              <div class="input-group">
+                <input 
+                  type="password" 
+                  class="form-control" 
+                  id="accountNumber"
+                  value="<%= bankDetail.accountNumberFull %>"
+                  readonly
+                >
+                <button 
+                  class="btn btn-outline-secondary" 
+                  type="button"
+                  onclick="toggleAccountNumber()"
+                  id="toggleBtn"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+              <small class="text-muted d-block mt-2">
+                Last 4 digits: <code><%= bankDetail.accountNumberFull.slice(-4) %></code>
+              </small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small text-uppercase fw-bold">IFSC Code</label>
+              <p class="fs-5"><code class="bg-light px-2 py-1 rounded"><%= bankDetail.ifscCode %></code></p>
+            </div>
+          </div>
+
+          <div class="row mb-0">
+            <div class="col-md-6">
+              <label class="form-label text-muted small text-uppercase fw-bold">Account Type</label>
+              <p class="fs-5">
+                <% 
+                  const types = {
+                    savings: 'Savings Account',
+                    current: 'Current Account',
+                    business: 'Business Account'
+                  };
+                %>
+                <%= types[bankDetail.accountType] || bankDetail.accountType %>
+              </p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small text-uppercase fw-bold">Account Type Code</label>
+              <p class="fs-5"><code class="bg-light px-2 py-1 rounded"><%= bankDetail.accountType %></code></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Information -->
+    <div class="col-lg-4 mb-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-bottom">
+          <h5 class="mb-0">User Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label text-muted small text-uppercase fw-bold">Name</label>
+            <p class="fs-5"><%= bankDetail.user.name %></p>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small text-uppercase fw-bold">Email</label>
+            <p class="fs-5"><a href="mailto:<%= bankDetail.user.email %>"><%= bankDetail.user.email %></a></p>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small text-uppercase fw-bold">Phone</label>
+            <p class="fs-5"><% if (bankDetail.user.phone) { %><a href="tel:<%= bankDetail.user.phone %>"><%= bankDetail.user.phone %></a><% } else { %><span class="text-muted">Not provided</span><% } %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verification & Metadata -->
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-bottom">
+          <h5 class="mb-0">Verification & Metadata</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted small text-uppercase fw-bold">Verification Status</label>
+              <p>
+                <% if (bankDetail.isVerified) { %>
+                  <span class="badge bg-success">
+                    <i class="fas fa-check-circle me-1"></i>Verified
+                  </span>
+                  <small class="text-muted d-block mt-2">
+                    Verified on: <%= new Date(bankDetail.verificationDate).toLocaleDateString('en-IN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) %>
+                  </small>
+                <% } else { %>
+                  <span class="badge bg-warning">
+                    <i class="fas fa-clock me-1"></i>Pending
+                  </span>
+                <% } %>
+              </p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small text-uppercase fw-bold">Last Updated</label>
+              <p class="fs-5">
+                <%= new Date(bankDetail.updatedAt).toLocaleDateString('en-IN', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) %>
+              </p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label text-muted small text-uppercase fw-bold">Date Added</label>
+              <p class="fs-5">
+                <%= new Date(bankDetail.createdAt).toLocaleDateString('en-IN', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) %>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-bottom">
+          <h5 class="mb-0">Actions</h5>
+        </div>
+        <div class="card-body">
+          <% if (!bankDetail.isVerified) { %>
+            <button 
+              class="btn btn-success w-100 mb-2"
+              onclick="verifyBankDetails('<%= bankDetail._id %>')"
+            >
+              <i class="fas fa-check-circle me-2"></i>Verify Account
+            </button>
+          <% } %>
+          <button 
+            class="btn btn-danger w-100"
+            onclick="deleteBankDetails('<%= bankDetail._id %>')"
+          >
+            <i class="fas fa-trash me-2"></i>Delete Record
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .card {
+    border-radius: 0.5rem;
+  }
+
+  .card-header {
+    padding: 1rem;
+    font-weight: 600;
+  }
+
+  code {
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+  }
+
+  .form-label {
+    color: #6c757d;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+  }
+</style>
+
+<script>
+let showPassword = false;
+
+function toggleAccountNumber() {
+  const input = document.getElementById('accountNumber');
+  const btn = document.getElementById('toggleBtn');
+  showPassword = !showPassword;
+  
+  if (showPassword) {
+    input.type = 'text';
+    btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+  } else {
+    input.type = 'password';
+    btn.innerHTML = '<i class="fas fa-eye"></i>';
+  }
+}
+
+function verifyBankDetails(id) {
+  if (!confirm('Verify this bank account?')) return;
+  
+  fetch(`/admin/bank-details/verify/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert('Bank details verified successfully');
+      location.reload();
+    } else {
+      alert(data.message || 'Failed to verify');
+    }
+  })
+  .catch(e => {
+    console.error(e);
+    alert('An error occurred');
+  });
+}
+
+function deleteBankDetails(id) {
+  if (!confirm('Delete this bank account permanently? This cannot be undone.')) return;
+  
+  fetch(`/admin/bank-details/${id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert('Bank details deleted successfully');
+      window.location.href = '/admin/bank-details';
+    } else {
+      alert(data.message || 'Failed to delete');
+    }
+  })
+  .catch(e => {
+    console.error(e);
+    alert('An error occurred');
+  });
+}
+</script>

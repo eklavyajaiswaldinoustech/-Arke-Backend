@@ -1,0 +1,264 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-sub">Welcome back. Here's what's happening at Arke today.</p>
+  </div>
+  <div style="font-size:11px; color:var(--text3); letter-spacing:1px;">
+    <%= new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) %>
+  </div>
+</div>
+
+<!-- ── Stat Cards ─── -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">◎</div>
+    <div class="stat-value"><%= stats.totalOrders || 0 %></div>
+    <div class="stat-label">Total Orders</div>
+    <div class="stat-change up"><%= stats.todayOrders || 0 %> today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="color:#4ade80">₹</div>
+    <div class="stat-value">₹<%= ((stats.totalRevenue || 0)/1000).toFixed(1) %>K</div>
+    <div class="stat-label">Total Revenue</div>
+    <div class="stat-change up">₹<%= (stats.todayRevenue || 0).toLocaleString() %> today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">◈</div>
+    <div class="stat-value"><%= stats.totalProducts || 0 %></div>
+    <div class="stat-label">Products</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">◷</div>
+    <div class="stat-value"><%= stats.totalUsers || 0 %></div>
+    <div class="stat-label">Customers</div>
+  </div>
+</div>
+
+<!-- ── Second row stats ─── -->
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:28px;">
+  <div class="stat-card">
+    <div class="stat-icon" style="color:#60a5fa">⏳</div>
+    <div class="stat-value"><%= stats.pendingOrders || 0 %></div>
+    <div class="stat-label">Pending Orders</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="color:#f59e0b">◉</div>
+    <div class="stat-value"><%= stats.totalCategories || 0 %></div>
+    <div class="stat-label">Categories</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="color:#a78bfa">✦</div>
+    <div class="stat-value"><%= stats.totalBlogs || 0 %></div>
+    <div class="stat-label">Blog Posts</div>
+  </div>
+</div>
+
+<div class="ops-grid">
+  <a href="/admin/orders?status=pending" class="ops-tile">
+    <span>Pending Orders</span>
+    <strong><%= stats.pendingOrders || 0 %></strong>
+  </a>
+  <a href="/admin/products" class="ops-tile">
+    <span>Low Stock</span>
+    <strong><%= lowStockProducts ? lowStockProducts.length : 0 %></strong>
+  </a>
+  <a href="/admin/coupons" class="ops-tile">
+    <span>Active Coupons</span>
+    <strong><%= stats.activeCoupons || 0 %></strong>
+  </a>
+  <a href="/admin/bank-details" class="ops-tile">
+    <span>Bank Records</span>
+    <strong><%= stats.bankDetailsCount || 0 %></strong>
+  </a>
+</div>
+
+<!-- ── Charts + Recent Orders ─── -->
+<div class="chart-grid">
+  <!-- Revenue chart -->
+  <div class="card" style="margin-bottom:0">
+    <div class="card-header">
+      <span class="card-title">Revenue — Last 7 Days</span>
+    </div>
+    <div class="card-body">
+      <% const maxRev = Math.max(...(stats.revenueChart || [1]).map(d=>d.revenue||d||1)); %>
+      <div class="mini-bar" style="height:120px; align-items:flex-end; gap:6px;">
+        <% (stats.revenueChart || [{day:'Mon',revenue:0},{day:'Tue',revenue:0},{day:'Wed',revenue:0},{day:'Thu',revenue:0},{day:'Fri',revenue:0},{day:'Sat',revenue:0},{day:'Sun',revenue:0}]).forEach(d => { %>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div class="mini-bar-item" style="width:100%; height:<%= Math.max(4, ((d.revenue||d||0)/maxRev)*100) %>px; background:rgba(100,150,255,0.3); border-radius:2px 2px 0 0; position:relative; transition:background 0.2s;"
+              onmouseover="this.style.background='rgba(100,150,255,0.7)'"
+              onmouseout="this.style.background='rgba(100,150,255,0.3)'"
+              title="₹<%= (d.revenue||d||0).toLocaleString() %>">
+            </div>
+            <span style="font-size:9px; color:var(--text3); letter-spacing:0.5px;"><%= d.day || '' %></span>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order status breakdown -->
+  <div class="card" style="margin-bottom:0">
+    <div class="card-header"><span class="card-title">Order Status</span></div>
+    <div class="card-body">
+      <% const statusData = [
+        {label:'Pending', count: stats.pendingOrders||0, color:'#f59e0b'},
+        {label:'Processing', count: stats.processingOrders||0, color:'#60a5fa'},
+        {label:'Delivered', count: stats.deliveredOrders||0, color:'#4ade80'},
+        {label:'Cancelled', count: stats.cancelledOrders||0, color:'#e57373'},
+      ];
+      const total = statusData.reduce((a,b)=>a+b.count,0)||1;
+      %>
+      <% statusData.forEach(s => { %>
+      <div style="margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+          <span style="font-size:12px; color:var(--text2);"><%= s.label %></span>
+          <span style="font-size:12px; color:<%= s.color %>;"><%= s.count %></span>
+        </div>
+        <div style="height:4px; background:rgba(232,228,220,0.06); border-radius:2px;">
+          <div style="height:100%; width:<%= Math.round((s.count/total)*100) %>%; background:<%= s.color %>; border-radius:2px;"></div>
+        </div>
+      </div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
+<!-- ── Recent Orders Table ─── -->
+<div class="card" style="margin-top:20px">
+  <div class="card-header">
+    <span class="card-title">Recent Orders</span>
+    <a href="/admin/orders" class="btn btn-ghost btn-sm">View All →</a>
+  </div>
+  <div class="card-body" style="padding:0">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (recentOrders && recentOrders.length > 0) { %>
+            <% recentOrders.forEach(order => { %>
+            <tr>
+              <td style="color:var(--gold); font-size:12px;">#<%= (order._id+'').slice(-6).toUpperCase() %></td>
+              <td><%= order.user ? (order.user.name || order.user.email || '—') : '—' %></td>
+              <td>₹<%= (order.totalAmount || 0).toLocaleString() %></td>
+              <td>
+                <% const sc = {pending:'badge-gold', processing:'badge-blue', shipped:'badge-blue', delivered:'badge-green', cancelled:'badge-red'}; %>
+                <span class="badge <%= sc[order.status] || 'badge-gray' %>"><%= order.status || 'pending' %></span>
+              </td>
+              <td style="color:var(--text3); font-size:12px;"><%= new Date(order.createdAt).toLocaleDateString('en-IN') %></td>
+              <td><a href="/admin/orders/<%= order._id %>" class="btn btn-ghost btn-sm">View</a></td>
+            </tr>
+            <% }); %>
+          <% } else { %>
+          <tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text3);">No orders yet</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Top Products ─── -->
+<div class="chart-grid" style="margin-top:20px;">
+  <div class="card" style="margin-bottom:0">
+    <div class="card-header">
+      <span class="card-title">Top Products</span>
+      <a href="/admin/products" class="btn btn-ghost btn-sm">Manage →</a>
+    </div>
+    <div class="card-body" style="padding:0">
+      <table>
+        <thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th></tr></thead>
+        <tbody>
+          <% if (topProducts && topProducts.length > 0) { %>
+            <% topProducts.forEach(p => { %>
+            <tr>
+              <td style="display:flex; align-items:center; gap:12px; padding:10px 16px;">
+                <% if (p.images && p.images[0]) { %>
+                  <img src="<%= p.images[0] %>" class="thumb" />
+                <% } else { %>
+                  <div class="thumb-placeholder">◇</div>
+                <% } %>
+                <span style="color:var(--text); font-size:13px;"><%= p.name %></span>
+              </td>
+              <td>₹<%= (p.price || 0).toLocaleString() %></td>
+              <td style="color:<%= (p.stock||0) < 5 ? 'var(--red)' : 'var(--text2)' %>"><%= p.stock || 0 %></td>
+              <td><span class="badge <%= p.isActive ? 'badge-green' : 'badge-gray' %>"><%= p.isActive ? 'Active' : 'Draft' %></span></td>
+            </tr>
+            <% }); %>
+          <% } else { %>
+          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3);">No products yet</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:0">
+    <div class="card-header"><span class="card-title">Quick Actions</span></div>
+    <div class="card-body" style="display:flex; flex-direction:column; gap:10px;">
+      <a href="/admin/products/add" class="btn btn-gold" style="justify-content:center;">+ Add New Product</a>
+      <a href="/admin/categories" class="btn btn-gold" style="justify-content:center;">+ Add Category</a>
+      <a href="/admin/banners" class="btn btn-gold" style="justify-content:center;">+ Add Banner</a>
+      <a href="/admin/blog/add" class="btn btn-gold" style="justify-content:center;">+ Write Blog Post</a>
+      <a href="/admin/coupons" class="btn btn-gold" style="justify-content:center;">+ Create Coupon</a>
+    </div>
+  </div>
+</div>
+
+<div class="chart-grid" style="margin-top:20px;">
+  <div class="card" style="margin-bottom:0">
+    <div class="card-header">
+      <span class="card-title">Inventory Watch</span>
+      <a href="/admin/products" class="btn btn-ghost btn-sm">Products</a>
+    </div>
+    <div class="card-body" style="padding:0">
+      <table>
+        <thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th></th></tr></thead>
+        <tbody>
+          <% if (lowStockProducts && lowStockProducts.length) { %>
+            <% lowStockProducts.forEach(p => { %>
+            <tr>
+              <td style="color:var(--text);"><%= p.name %></td>
+              <td style="color:var(--text3);"><%= p.sku || '—' %></td>
+              <td><span class="badge <%= (p.stock || 0) === 0 ? 'badge-red' : 'badge-gold' %>"><%= p.stock || 0 %></span></td>
+              <td><a href="/admin/products/edit/<%= p._id %>" class="btn btn-ghost btn-sm">Edit</a></td>
+            </tr>
+            <% }); %>
+          <% } else { %>
+            <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3);">Inventory levels look healthy.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:0">
+    <div class="card-header">
+      <span class="card-title">New Customers</span>
+      <a href="/admin/users" class="btn btn-ghost btn-sm">Users</a>
+    </div>
+    <div class="card-body">
+      <% if (newUsers && newUsers.length) { %>
+        <% newUsers.forEach(u => { %>
+          <a href="/admin/users/<%= u._id %>" class="mini-person">
+            <span><%= (u.name || u.email || '?')[0] %></span>
+            <div>
+              <strong><%= u.name || 'Unnamed customer' %></strong>
+              <small><%= u.email %></small>
+            </div>
+          </a>
+        <% }); %>
+      <% } else { %>
+        <p style="color:var(--text3);font-size:13px;">No customers yet.</p>
+      <% } %>
+    </div>
+  </div>
+</div>

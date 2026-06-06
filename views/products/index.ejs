@@ -1,0 +1,180 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Products</h1>
+    <p class="page-sub"><%= products.length %> products in catalogue</p>
+  </div>
+  <a href="/admin/products/add" class="btn btn-primary">+ Add Product</a>
+</div>
+
+<div class="filter-bar">
+  <div class="search-box" style="max-width:320px;">
+    <input type="text" id="tableSearch" placeholder="Search products…" />
+  </div>
+  <select class="filter-select" onchange="filterByStatus(this.value)">
+    <option value="">All Status</option>
+    <option value="active">Active</option>
+    <option value="draft">Draft</option>
+  </select>
+  <select class="filter-select" onchange="filterByCategory(this.value)">
+    <option value="">All Categories</option>
+    <% categories.forEach(c => { %>
+    <option value="<%= c._id %>"><%= c.name %></option>
+    <% }); %>
+  </select>
+  <select class="filter-select" onchange="filterByGender(this.value)">
+    <option value="">All Gift Types</option>
+    <option value="her">Gift For Her</option>
+    <option value="him">Gift For Him</option>
+    <option value="none">Not a Gift</option>
+  </select>
+  <span style="margin-left:auto; font-size:11px; color:var(--text3); letter-spacing:1px;">
+    Total: <%= products.length %> items
+  </span>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:50px">#</th>
+          <th style="width:60px">Image</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Gift For</th>
+          <th>Price</th>
+          <th>MRP</th>
+          <th>Stock</th>
+          <th>Status</th>
+          <th>Featured</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (products.length > 0) { %>
+          <% products.forEach((p, i) => { %>
+          <tr>
+            <td style="color:var(--text3); font-size:11px;"><%= i+1 %></td>
+            <td>
+              <% if (p.images && p.images[0]) { %>
+                <img src="<%= p.images[0] %>" class="thumb" alt="<%= p.name %>" />
+              <% } else { %>
+                <div class="thumb-placeholder">◇</div>
+              <% } %>
+            </td>
+            <td>
+              <div style="color:var(--text); font-size:13px; font-weight:500; margin-bottom:2px;"><%= p.name %></div>
+              <div style="font-size:11px; color:var(--text3);">SKU: <%= p.sku || '—' %></div>
+            </td>
+            <td style="color:var(--text3);">
+              <%= p.category ? (p.category.name || '—') : '—' %>
+            </td>
+            <td>
+              <% if (p.giftFor === 'her') { %>
+                <span class="badge" style="background:#ff69b4; color:white;">💝 Her</span>
+              <% } else if (p.giftFor === 'him') { %>
+                <span class="badge" style="background:#4169e1; color:white;">🎁 Him</span>
+              <% } else { %>
+                <span style="color:var(--text3); font-size:11px;">—</span>
+              <% } %>
+            </td>
+            <td style="color:var(--gold);">₹<%= (p.price||0).toLocaleString() %></td>
+            <td style="color:var(--text3); text-decoration:line-through; font-size:12px;">
+              <%= p.mrp ? '₹'+p.mrp.toLocaleString() : '—' %>
+            </td>
+            <td style="color:<%= (p.stock||0) < 5 ? 'var(--red)' : (p.stock||0) < 20 ? '#f59e0b' : 'var(--text2)' %>">
+              <%= p.stock || 0 %>
+            </td>
+            <td>
+              <span class="badge <%= p.isActive ? 'badge-green' : 'badge-gray' %>">
+                <%= p.isActive ? 'Active' : 'Draft' %>
+              </span>
+            </td>
+            <td style="text-align:center;">
+              <% if (p.isFeatured) { %><span style="color:var(--gold);">★</span><% } else { %><span style="color:var(--text3);">☆</span><% } %>
+            </td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <a href="/admin/products/edit/<%= p._id %>" class="btn btn-ghost btn-sm">Edit</a>
+                <a href="/admin/products/delete/<%= p._id %>"
+                   class="btn btn-danger btn-sm"
+                   data-confirm="Delete '<%= p.name %>'? This cannot be undone.">Del</a>
+              </div>
+            </td>
+          </tr>
+          <% }); %>
+        <% } else { %>
+        <tr>
+          <td colspan="10" style="text-align:center; padding:60px; color:var(--text3);">
+            No products yet. <a href="/admin/products/add" style="color:var(--gold);">Add your first product →</a>
+          </td>
+        </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+  function filterByStatus(status) {
+    const rows = document.querySelectorAll('table tbody tr');
+    rows.forEach(row => {
+      if (status === '') {
+        row.style.display = '';
+      } else {
+        const badge = row.querySelector('.badge');
+        if (badge) {
+          const isActive = badge.textContent.includes('Active');
+          if ((status === 'active' && isActive) || (status === 'draft' && !isActive)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      }
+    });
+  }
+
+  function filterByCategory(categoryId) {
+    const rows = document.querySelectorAll('table tbody tr');
+    rows.forEach(row => {
+      if (categoryId === '') {
+        row.style.display = '';
+      } else {
+        const cells = row.querySelectorAll('td');
+        if (cells[3] && cells[3].textContent.trim() === document.querySelector(`option[value="${categoryId}"]`)?.textContent) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      }
+    });
+  }
+
+  function filterByGender(giftFor) {
+    const rows = document.querySelectorAll('table tbody tr');
+    rows.forEach(row => {
+      if (giftFor === '') {
+        row.style.display = '';
+      } else {
+        const giftCell = row.querySelectorAll('td')[4];
+        if (giftCell) {
+          const text = giftCell.textContent.trim();
+          let matches = false;
+          if (giftFor === 'her' && text.includes('Her')) matches = true;
+          if (giftFor === 'him' && text.includes('Him')) matches = true;
+          if (giftFor === 'none' && text === '—') matches = true;
+          row.style.display = matches ? '' : 'none';
+        }
+      }
+    });
+  }
+
+  document.getElementById('tableSearch').addEventListener('keyup', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('table tbody tr');
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+  });
+</script>

@@ -1,0 +1,66 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Blog</h1>
+    <p class="page-sub"><%= blogs.length %> posts published</p>
+  </div>
+  <a href="/admin/blog/add" class="btn btn-primary">+ New Post</a>
+</div>
+
+<div class="filter-bar">
+  <div class="search-box" style="max-width:300px;">
+    <input type="text" id="tableSearch" placeholder="Search posts…" />
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (blogs.length > 0) { %>
+          <% blogs.forEach(b => { %>
+          <tr>
+            <td>
+              <% if (b.image || b.thumbnail) { %>
+                <img src="<%= b.image || b.thumbnail %>" class="thumb" />
+              <% } else { %>
+                <div class="thumb-placeholder">✦</div>
+              <% } %>
+            </td>
+            <td>
+              <div style="color:var(--text); font-size:13px; font-weight:500; margin-bottom:2px;"><%= b.title %></div>
+              <div style="font-size:11px; color:var(--text3); max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                <%= b.excerpt || (b.content||'').substring(0,80)+'...' %>
+              </div>
+            </td>
+            <td><span class="badge badge-gray"><%= b.category || 'General' %></span></td>
+            <td><span class="badge <%= b.isPublished ? 'badge-green' : 'badge-gold' %>"><%= b.isPublished ? 'Published' : 'Draft' %></span></td>
+            <td style="color:var(--text3); font-size:12px;"><%= new Date(b.createdAt).toLocaleDateString('en-IN') %></td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <a href="/admin/blog/edit/<%= b._id %>" class="btn btn-ghost btn-sm">Edit</a>
+                <a href="/admin/blog/delete/<%= b._id %>"
+                   class="btn btn-danger btn-sm"
+                   data-confirm="Delete '<%= b.title %>'?">Del</a>
+              </div>
+            </td>
+          </tr>
+          <% }); %>
+        <% } else { %>
+        <tr><td colspan="6" style="text-align:center;padding:60px;color:var(--text3);">
+          No posts yet. <a href="/admin/blog/add" style="color:var(--gold);">Write your first post →</a>
+        </td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
