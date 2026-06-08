@@ -26,7 +26,7 @@ const announcementRoutes = require("./src/api/announcementRoutes");
 const giftRoutes = require("./src/api/giftRoutes");
 const cartRoutes = require("./src/api/cartRoutes");
 const wishlistRoutes = require("./src/api/wishlisRoutes");
-const adminRoutes = require("./src/admin/adminRoutes");
+
 
 
 
@@ -36,7 +36,7 @@ app.use("/api/announcements", announcementRoutes);
 app.use("/api/gifts", giftRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/view-wishlist", wishlistRoutes);
-app.use("/admin", adminRoutes);
+
 
 app.get("/", (req, res) => res.json({ status: "running", name: "ARKE API" }));
 
