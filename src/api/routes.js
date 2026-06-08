@@ -279,7 +279,7 @@ router.post("/place-order", protect, async (req, res) => {
   } catch (e) { err(res, e.message); }
 });
 
-router.get("/get-all-orders", protect, async (req, res) => {
+router.get("/orders", protect, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 }).populate("items.product", "name images");
     ok(res, { data: orders, orders });
