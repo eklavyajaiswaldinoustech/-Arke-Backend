@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Your Order</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #faf8f5, #f5f5f0);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .header h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px;
+      color: #2a2a2a;
+      margin-bottom: 12px;
+      font-weight: 300;
+    }
+    .header p {
+      color: #8a8a8a;
+      font-size: 14px;
+    }
+    .track-form {
+      background: white;
+      border: 1.5px solid #e8ddd4;
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group label {
+      font-size: 11px;
+      color: #8a8a8a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .form-group input,
+    .form-group select {
+      padding: 12px 16px;
+      border: 1.5px solid #e8ddd4;
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 13px;
+      transition: all 0.3s;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #8b4654;
+      box-shadow: 0 0 0 4px rgba(139, 70, 84, 0.1);
+    }
+    .btn {
+      padding: 12px 32px;
+      background: linear-gradient(135deg, #e8b4c4, #8b4654);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 16px rgba(232, 180, 196, 0.3);
+      white-space: nowrap;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(232, 180, 196, 0.4);
+    }
+    .order-card {
+      background: white;
+      border: 1.5px solid #e8ddd4;
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+      animation: slideUp 0.5s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e8ddd4;
+    }
+    .order-id {
+      font-size: 14px;
+      font-weight: 700;
+      color: #8b4654;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status-placed { background: rgba(91, 155, 213, 0.15); color: #5b9bd5; }
+    .status-shipped { background: rgba(232, 168, 76, 0.15); color: #e8a84c; }
+    .status-delivered { background: rgba(112, 200, 120, 0.15); color: #70c878; }
+    .status-cancelled { background: rgba(217, 112, 112, 0.15); color: #d97070; }
+    .timeline {
+      margin-bottom: 24px;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      animation: fadeIn 0.5s ease;
+    }
+    .timeline-marker {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 28px;
+      flex-shrink: 0;
+    }
+    .timeline-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #70c878;
+      border: 2px solid white;
+      box-shadow: 0 0 0 2px #70c878;
+    }
+    .timeline-dot.active {
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, #e8b4c4, #8b4654);
+      box-shadow: 0 0 12px rgba(139, 70, 84, 0.4);
+    }
+    .timeline-line {
+      width: 2px;
+      flex: 1;
+      background: #e8ddd4;
+      margin-top: -4px;
+    }
+    .timeline-content {
+      flex: 1;
+      padding: 12px 0;
+    }
+    .timeline-content h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #2a2a2a;
+      margin-bottom: 4px;
+    }
+    .timeline-content p {
+      font-size: 11px;
+      color: #8a8a8a;
+      margin: 0;
+    }
+    .items-list {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid #e8ddd4;
+    }
+    .items-list h4 {
+      font-size: 12px;
+      font-weight: 700;
+      color: #8a8a8a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    .item {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(232, 180, 196, 0.08);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .item-name {
+      font-weight: 600;
+      color: #2a2a2a;
+    }
+    .item-details {
+      color: #8a8a8a;
+      margin-top: 2px;
+    }
+    .error-message {
+      background: rgba(217, 112, 112, 0.15);
+      border: 1px solid rgba(217, 112, 112, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      color: #d97070;
+      margin-top: 16px;
+      font-size: 12px;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #8a8a8a;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e8ddd4;
+      border-top-color: #e8b4c4;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .header h1 {
+        font-size: 24px;
+      }
+      .track-form {
+        padding: 20px;
+      }
+      .order-card {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Track Your Order</h1>
+    <p>Enter your order ID and email to see real-time tracking updates</p>
+  </div>
+
+  <div class="track-form">
+    <form onsubmit="trackOrder(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="orderId">📋 Order ID</label>
+          <input 
+            type="text" 
+            id="orderId" 
+            placeholder="ARK-XXXXXXXX" 
+            required
+            style="text-transform: uppercase;"
+          >
+        </div>
+        <div class="form-group">
+          <label for="email">✉️ Email (Optional)</label>
+          <input 
+            type="email" 
+            id="email" 
+            placeholder="your@email.com"
+          >
+        </div>
+        <button type="submit" class="btn">🔍 Track Order</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<script>
+async function trackOrder(event) {
+  event.preventDefault();
+  
+  const orderId = document.getElementById('orderId').value.toUpperCase();
+  const email = document.getElementById('email').value;
+  
+  const resultDiv = document.getElementById('result');
+  resultDiv.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Fetching order details...</div>';
+  
+  try {
+    let url = `/api/orders/track/${orderId}`;
+    if (email) url += `?email=${encodeURIComponent(email)}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (!data.success) {
+      resultDiv.innerHTML = `
+        <div class="error-message">
+          ⚠️ ${data.message || 'Order not found'}
+        </div>
+      `;
+      return;
+    }
+    
+    const order = data.data;
+    displayOrder(order);
+  } catch (err) {
+    resultDiv.innerHTML = `
+      <div class="error-message">
+        ⚠️ Error fetching order. Please try again.
+      </div>
+    `;
+  }
+}
+
+function getStatusClass(status) {
+  if (status === 'delivered') return 'status-delivered';
+  if (['shipped', 'in_transit', 'out_for_delivery'].includes(status)) return 'status-shipped';
+  if (status === 'cancelled') return 'status-cancelled';
+  return 'status-placed';
+}
+
+function getStatusLabel(status) {
+  const labels = {
+    placed: '📋 Order Placed',
+    confirmed: '✅ Confirmed',
+    processing: '⚙️ Processing',
+    packed: '📦 Packed',
+    shipped: '🚚 Shipped',
+    in_transit: '🛣️ In Transit',
+    out_for_delivery: '🏍️ Out for Delivery',
+    delivered: '🎉 Delivered',
+    cancelled: '❌ Cancelled',
+    return_requested: '🔄 Return Requested',
+    return_approved: '✅ Return Approved',
+    return_picked: '📦 Picked Up',
+    refund_processing: '💰 Refund Processing',
+    refunded: '✅ Refunded'
+  };
+  return labels[status] || status.replace(/_/g, ' ');
+}
+
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function displayOrder(order) {
+  const resultDiv = document.getElementById('result');
+  
+  const timeline = (order.statusHistory || []).map((step, idx) => {
+    const isLast = idx === (order.statusHistory.length - 1);
+    return `
+      <div class="timeline-item">
+        <div class="timeline-marker">
+          <div class="timeline-dot ${isLast ? 'active' : ''}"></div>
+          ${idx < (order.statusHistory.length - 1) ? '<div class="timeline-line"></div>' : ''}
+        </div>
+        <div class="timeline-content">
+          <h3>${getStatusLabel(step.status)}</h3>
+          <p>${formatDate(step.date)}${step.location ? ' • ' + step.location : ''}</p>
+          ${step.note ? `<p>${step.note}</p>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const items = (order.items || []).map(item => `
+    <div class="item">
+      <div>
+        <div class="item-name">${item.name || 'Product'}</div>
+        <div class="item-details">
+          Qty: ${item.quantity || 1} • ₹${(item.price || 0).toLocaleString('en-IN')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  resultDiv.innerHTML = `
+    <div class="order-card">
+      <div class="order-header">
+        <div>
+          <div class="order-id">${order.orderId}</div>
+          <div style="font-size: 11px; color: #8a8a8a; margin-top: 4px;">
+            Ordered on ${formatDate(order.createdAt)}
+          </div>
+        </div>
+        <span class="status-badge ${getStatusClass(order.status)}">
+          ${getStatusLabel(order.status)}
+        </span>
+      </div>
+      
+      <div class="timeline">
+        ${timeline}
+      </div>
+
+      ${order.shippingPartner ? `
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e8ddd4;">
+          <div style="padding: 12px; background: rgba(232,180,196,0.08); border-radius: 8px;">
+            <div style="font-size: 10px; color: #8a8a8a; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">🚚 Carrier</div>
+            <div style="font-size: 12px; color: #2a2a2a; font-weight: 600;">${order.shippingPartner}</div>
+          </div>
+          <div style="padding: 12px; background: rgba(232,180,196,0.08); border-radius: 8px;">
+            <div style="font-size: 10px; color: #8a8a8a; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">📦 Tracking</div>
+            <div style="font-size: 12px; color: #2a2a2a; font-weight: 600;">${order.trackingNumber || '—'}</div>
+          </div>
+          <div style="padding: 12px; background: rgba(232,180,196,0.08); border-radius: 8px;">
+            <div style="font-size: 10px; color: #8a8a8a; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">📅 Expected</div>
+            <div style="font-size: 12px; color: #2a2a2a; font-weight: 600;">${order.expectedDelivery ? formatDate(order.expectedDelivery) : '—'}</div>
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="items-list">
+        <h4>Order Items (₹${order.total?.toLocaleString('en-IN')})</h4>
+        ${items}
+      </div>
+
+      <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e8ddd4;">
+        <h4 style="font-size: 12px; font-weight: 700; color: #8a8a8a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Shipping Address</h4>
+        <div style="font-size: 12px; color: #2a2a2a; line-height: 1.6;">
+          <div><strong>${order.shippingAddress?.name || '—'}</strong></div>
+          <div>${order.shippingAddress?.line1 || '—'}</div>
+          <% if (order.shippingAddress?.line2) { %><div>${order.shippingAddress?.line2}</div><% } %>
+          <div>${order.shippingAddress?.city || '—'}, ${order.shippingAddress?.state || '—'} ${order.shippingAddress?.pincode || '—'}</div>
+          <div>${order.shippingAddress?.phone || '—'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Auto-load if order ID is in URL
+const params = new URLSearchParams(window.location.search);
+if (params.get('order')) {
+  document.getElementById('orderId').value = params.get('order');
+  trackOrder({ preventDefault: () => {} });
+}
+</script>
+</body>
+</html>

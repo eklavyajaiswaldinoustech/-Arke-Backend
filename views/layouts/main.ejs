@@ -88,12 +88,18 @@
 
     <% if (typeof success !== 'undefined' && success) { %>
     <div style="padding:16px 32px 0;">
-      <div class="alert alert-success" data-auto>✓ &nbsp;<%= success %></div>
+      <div class="alert alert-success fade-in" data-auto style="display:flex; justify-content:space-between; align-items:center;">
+        <span>✓ &nbsp;<%= success %></span>
+        <button onclick="this.parentElement.remove()" style="background:none; border:none; color:inherit; cursor:pointer; font-size:16px; padding:0;">✕</button>
+      </div>
     </div>
     <% } %>
     <% if (typeof error !== 'undefined' && error) { %>
     <div style="padding:16px 32px 0;">
-      <div class="alert alert-error" data-auto>✕ &nbsp;<%= error %></div>
+      <div class="alert alert-error fade-in" data-auto style="display:flex; justify-content:space-between; align-items:center;">
+        <span>✕ &nbsp;<%= error %></span>
+        <button onclick="this.parentElement.remove()" style="background:none; border:none; color:inherit; cursor:pointer; font-size:16px; padding:0;">✕</button>
+      </div>
     </div>
     <% } %>
 

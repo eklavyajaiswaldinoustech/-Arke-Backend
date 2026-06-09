@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Returns & Refunds</title>
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<%- include('../layouts/main') %>
+
+<div style="padding: 32px 80px;">
+  <h1 style="margin: 0 0 28px; font-size: 32px; color: #2a2a2a; font-family: 'Cormorant Garamond', serif;">
+    🔄 Returns & Refunds Management
+  </h1>
+
+  <!-- Return requests -->
+  <div style="background: white; border: 1.5px solid #e8ddd4; border-radius: 12px; padding: 28px; margin-bottom: 32px;">
+    <h2 style="margin: 0 0 20px; font-size: 20px; color: #2a2a2a; font-family: 'Cormorant Garamond', serif;">
+      📋 Return Requests
+    </h2>
+    
+    <% if (returns && returns.length > 0) { %>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <% returns.forEach(ret => { %>
+          <div style="background: linear-gradient(135deg, rgba(232,180,196,0.08), rgba(201,169,110,0.05)); border: 1.5px solid rgba(232,180,196,0.3); border-radius: 10px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: #8b4654;">
+                  <%= ret.orderId %>
+                </div>
+                <div style="font-size: 11px; color: #8a8a8a; margin-top: 4px;">
+                  <% if (ret.returnInfo) { %>
+                    Reason: <%= ret.returnInfo.reason?.replace(/_/g, ' ').toUpperCase() %>
+                  <% } %>
+                </div>
+              </div>
+              <span style="display: inline-block; padding: 5px 12px; border-radius: 12px; font-size: 10px; font-weight: 700; 
+                <% if (ret.status === 'return_requested') { %>
+                  background: rgba(232,168,76,0.15); color: #e8a84c;
+                <% } else if (ret.status === 'return_approved') { %>
+                  background: rgba(112,200,120,0.15); color: #70c878;
+                <% } else if (ret.status === 'refunded') { %>
+                  background: rgba(112,200,120,0.15); color: #70c878;
+                <% } else if (ret.status === 'return_rejected') { %>
+                  background: rgba(217,112,112,0.15); color: #d97070;
+                <% } else { %>
+                  background: rgba(91,155,213,0.15); color: #5b9bd5;
+                <% } %>">
+                <%= ret.status.replace(/_/g, ' ').toUpperCase() %>
+              </span>
+            </div>
+
+            <% if (ret.returnInfo?.details) { %>
+              <div style="margin-bottom: 16px; padding: 12px; background: rgba(255,255,255,0.5); border-radius: 6px;">
+                <div style="font-size: 10px; color: #8a8a8a; text-transform: uppercase; margin-bottom: 4px;">Details</div>
+                <div style="font-size: 12px; color: #2a2a2a;">
+                  <%= ret.returnInfo.details %>
+                </div>
+              </div>
+            <% } %>
+
+            <% if (ret.status === 'return_requested') { %>
+              <div style="display: flex; gap: 10px;">
+                <button onclick="approveReturn('<%= ret._id %>')" 
+                  style="flex: 1; padding: 10px 16px; background: linear-gradient(135deg, #70c878, #5ba366); color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s;">
+                  ✅ Approve Return
+                </button>
+                <button onclick="rejectReturn('<%= ret._id %>')" 
+                  style="flex: 1; padding: 10px 16px; background: linear-gradient(135deg, #d97070, #c15c5c); color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s;">
+                  ❌ Reject Return
+                </button>
+              </div>
+            <% } else if (ret.status === 'return_approved') { %>
+              <div style="display: flex; gap: 10px;">
+                <button onclick="updateReturnStatus('<%= ret._id %>', 'return_picked')" 
+                  style="flex: 1; padding: 10px 16px; background: linear-gradient(135deg, #e8a84c, #d9941d); color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                  📦 Picked Up
+                </button>
+              </div>
+            <% } else if (ret.status === 'return_picked') { %>
+              <div style="display: flex; gap: 10px;">
+                <button onclick="processRefund('<%= ret._id %>')" 
+                  style="flex: 1; padding: 10px 16px; background: linear-gradient(135deg, #70c878, #5ba366); color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                  💰 Process Refund
+                </button>
+              </div>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <div style="text-align: center; padding: 40px; color: #8a8a8a;">
+        <div style="font-size: 32px; margin-bottom: 12px;">🔄</div>
+        <p>No return requests at the moment</p>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+function approveReturn(orderId) {
+  const pickupDate = prompt('Enter pickup date (YYYY-MM-DD):');
+  if (!pickupDate) return;
+  
+  const pickupPartner = prompt('Pickup partner (BlueDart, DTDC, etc.):');
+  if (!pickupPartner) return;
+  
+  fetch(`/admin/orders/${orderId}/approve-return`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pickupDate, pickupPartner })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert('Return approved!');
+      location.reload();
+    } else {
+      alert('Error: ' + data.message);
+    }
+  });
+}
+
+function rejectReturn(orderId) {
+  const reason = prompt('Enter rejection reason:');
+  if (!reason) return;
+  
+  fetch(`/admin/orders/${orderId}/reject-return`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert('Return rejected!');
+      location.reload();
+    }
+  });
+}
+
+function processRefund(orderId) {
+  const refundAmount = prompt('Enter refund amount (₹):');
+  if (!refundAmount) return;
+  
+  fetch(`/admin/orders/${orderId}/process-refund`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refundAmount: parseFloat(refundAmount) })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert('Refund processing initiated!');
+      location.reload();
+    }
+  });
+}
+
+function updateReturnStatus(orderId, status) {
+  fetch(`/admin/orders/${orderId}/update-status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    }
+  });
+}
+</script>
+
+</body>
+</html>

@@ -2,34 +2,7 @@ const mongoose = require("mongoose");
 const Announcement = require("./Announcement");
 const HeroBanner = require("./HeroBanner");
 const Cart = require("./Cart");
-
-/* ── Order ─────────────────────────────────────────────────── */
-const orderSchema = new mongoose.Schema({
-  user:          { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  items: [{
-    product:  { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-    name:     String,
-    price:    Number,
-    quantity: { type: Number, default: 1 },
-    image:    String,
-  }],
-  shippingAddress: {
-    name: String, line1: String, line2: String,
-    city: String, state: String, pincode: String, phone: String,
-  },
-  subtotal:       { type: Number, default: 0 },
-  shippingCharge: { type: Number, default: 0 },
-  discount:       { type: Number, default: 0 },
-  totalAmount:    { type: Number, required: true },
-  couponCode:     { type: String },
-  status:         { type: String, enum: ["pending","processing","shipped","delivered","cancelled"], default: "pending" },
-  paymentMethod:  { type: String, enum: ["online","cod"], default: "online" },
-  paymentStatus:  { type: String, enum: ["pending","paid","failed","refunded"], default: "pending" },
-  razorpayOrderId:   { type: String },
-  razorpayPaymentId: { type: String },
-  trackingNumber: { type: String },
-  notes:          { type: String },
-}, { timestamps: true });
+const Order = require("./Order");
 
 /* ── Wishlist ───────────────────────────────────────────────── */
 const wishlistSchema = new mongoose.Schema({
@@ -87,8 +60,8 @@ const couponSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports = {
-  Order:    mongoose.model("Order", orderSchema),
-  Cart:     Cart,
+  Order,
+  Cart,
   Wishlist: mongoose.model("Wishlist", wishlistSchema),
   Banner:   mongoose.model("Banner", bannerSchema),
   Blog:     mongoose.model("Blog", blogSchema),

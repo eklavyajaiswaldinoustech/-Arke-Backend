@@ -37,6 +37,12 @@ app.use(session({
 
 // Routes
 app.use("/admin", require("./src/admin/adminRoutes"));
+
+// Public order tracking page
+app.get("/track", (req, res) => {
+  res.render("order-tracking", { layout: false });
+});
+
 app.get("/", (req, res) => res.redirect("/admin"));
 
 app.listen(PORT, () => {

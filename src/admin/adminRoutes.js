@@ -71,10 +71,9 @@ router.get("/blog/edit/:id", ctrl.editBlogPage);
 router.post("/blog/edit/:id", upload.single("image"), ctrl.editBlog);
 router.get("/blog/delete/:id", ctrl.deleteBlog);
 
-// Orders
-router.get("/orders", ctrl.orderList);
-router.get("/orders/:id", ctrl.orderDetail);
-router.post("/orders/:id/status", ctrl.updateOrderStatus);
+// Orders - Comprehensive order management
+const orderRoutes = require("./orderRoutes");
+router.use("/orders", orderRoutes);
 
 // Users
 router.get("/users", ctrl.userList);

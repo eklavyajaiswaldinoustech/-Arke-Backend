@@ -55,9 +55,24 @@ document.querySelectorAll('[data-filter-column]').forEach(select => {
 
 /* ── Auto-dismiss alerts ─── */
 document.querySelectorAll('.alert[data-auto]').forEach(el => {
-  setTimeout(() => el.style.opacity = '0', 3000);
-  setTimeout(() => el.remove(), 3500);
-  el.style.transition = 'opacity 0.5s';
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-10px)';
+  }, 4000);
+  setTimeout(() => el.remove(), 4500);
+  el.style.transition = 'all 0.5s ease';
+});
+
+/* ── Alert close button handler ─── */
+document.querySelectorAll('.alert button').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const alert = this.closest('.alert');
+    if (alert) {
+      alert.style.opacity = '0';
+      alert.style.transform = 'translateY(-10px)';
+      setTimeout(() => alert.remove(), 300);
+    }
+  });
 });
 
 /* ── Topbar admin name ─── */
