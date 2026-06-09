@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const adminController = require("./adminController");
 const ctrl = require("./adminController");
 const giftRoutes = require("./giftRoutes");
 const multer = require("multer");
@@ -61,6 +62,7 @@ router.get("/banners/edit/:id", ctrl.editBannerPage);
 router.post("/banners/edit/:id", upload.single("image"), ctrl.editBanner);
 
 
+
 // Blog
 router.get("/blog", ctrl.blogList);
 router.get("/blog/add", ctrl.addBlogPage);
@@ -84,6 +86,7 @@ router.get("/coupons", ctrl.couponList);
 router.post("/coupons/add", ctrl.addCoupon);
 router.get("/coupons/toggle/:id", ctrl.toggleCoupon);
 router.get("/coupons/delete/:id", ctrl.deleteCoupon);
+router.get("/coupons", adminController.getCoupons);
 
 // Announcements
 router.get("/announcements", announcementCtrl.index);

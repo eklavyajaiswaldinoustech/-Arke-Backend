@@ -433,7 +433,7 @@ exports.addCoupon = async (req, res) => {
       expiryDate: expiryDate || null, isActive: true,
     });
     req.session.success = `Coupon ${code.toUpperCase()} created.`;
-    res.redirect("/admin/coupons");
+    res.redirect("/admin/coupon");
   } catch (err) { req.session.error = err.message; res.redirect("/admin/coupons"); }
 };
 
@@ -447,6 +447,28 @@ exports.deleteCoupon = async (req, res) => {
   await Coupon.findByIdAndDelete(req.params.id);
   req.session.success = "Coupon deleted.";
   res.redirect("/admin/coupons");
+};
+exports.getCoupons = async (req, res) => {
+  try {
+    const now = new Date();
+    const coupons = await Coupon.find({
+      isActive: true,
+      $or: [
+        { expiryDate: null },
+        { expiryDate: { $gte: now } }
+      ]
+    }).select("code discountType discountValue minOrderAmount expiryDate").lean();
+    
+    res.status(200).json({
+      success: true,
+      data: coupons
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
 };
 
 /* ── Announcements ──────────────────────────────────────────────────── */

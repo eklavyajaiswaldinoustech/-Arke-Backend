@@ -37,8 +37,9 @@ app.use("/api/announcements", announcementRoutes);
 app.use("/api/gifts", giftRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/view-wishlist", wishlistRoutes);
-app.use("/admin", require("./src/admin/adminRoutes"));
-app.use("/admin", adminRoutes);
+// app.use("/admin", require("./src/admin/adminRoutes"));
+// app.use("/admin", adminRoutes);
+
 
 
 

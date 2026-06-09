@@ -324,15 +324,9 @@ router.post("/remove-from-wishlist", protect, async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ── ORDERS (FIXED) ────────────────────────────────────────────────────────
+// ── ORDERS ────────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * @route   POST /api/place-order
- * @access  Private
- * @desc    Create a new order with all items from cart
- * @body    {items, shippingAddress, paymentMethod}
- */
 router.post("/place-order", protect, async (req, res) => {
   try {
     console.log("Order Data:", req.body);
@@ -382,7 +376,6 @@ router.post("/place-order", protect, async (req, res) => {
 
     let discount = 0;
 
-    // Optional coupon handling
     if (couponCode) {
       const coupon = await Coupon.findOne({
         code: couponCode.toUpperCase(),
@@ -427,10 +420,7 @@ router.post("/place-order", protect, async (req, res) => {
       couponCode: couponCode || "",
 
       paymentMethod,
-      paymentStatus:
-        paymentMethod === "cod"
-          ? "pending"
-          : "pending",
+      paymentStatus: "pending",
 
       status: "pending",
     });
@@ -461,27 +451,18 @@ router.post("/place-order", protect, async (req, res) => {
   }
 });
 
-/**
- * @route   GET /api/orders
- * @access  Private
- * @desc    Get all orders for logged in user
- */
 router.get("/orders", protect, async (req, res) => {
   try {
-    // ✅ FIX: Don't populate - use stored product data in items instead
     const orders = await Order.find({ user: req.user._id })
       .sort({ createdAt: -1 });
     
-    // ✅ FIX: Format orders to ensure image data is correct
     const formattedOrders = orders.map(order => ({
       ...order.toObject(),
       items: order.items.map(item => ({
         ...item,
-        // Ensure image and images fields exist
         image: item.image || item.images?.[0],
         images: item.images || (item.image ? [item.image] : []),
       })),
-      // Ensure these fields exist with defaults
       shipping: order.shipping || 0,
       status: order.status || "pending",
       paymentStatus: order.paymentStatus || "pending",
@@ -494,11 +475,6 @@ router.get("/orders", protect, async (req, res) => {
   }
 });
 
-/**
- * @route   GET /api/order/:orderId
- * @access  Private
- * @desc    Get single order by ID
- */
 router.get("/order/:orderId", protect, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.orderId)) {
@@ -509,7 +485,6 @@ router.get("/order/:orderId", protect, async (req, res) => {
     
     if (!order) return err(res, "Order not found", 404);
     
-    // Verify user owns this order
     if (order.user.toString() !== req.user._id.toString()) {
       return err(res, "Unauthorized", 403);
     }
@@ -533,11 +508,6 @@ router.get("/order/:orderId", protect, async (req, res) => {
   }
 });
 
-/**
- * @route   PATCH /api/order/:orderId/status
- * @access  Private
- * @desc    Update order status (user or admin)
- */
 router.patch("/order/:orderId/status", protect, async (req, res) => {
   try {
     const { status } = req.body;
@@ -555,14 +525,12 @@ router.patch("/order/:orderId/status", protect, async (req, res) => {
     
     if (!order) return err(res, "Order not found", 404);
     
-    // Only user who placed order or admin can update
     if (order.user.toString() !== req.user._id.toString() && !req.user.isAdmin) {
       return err(res, "Unauthorized", 403);
     }
     
     order.status = status;
     
-    // Auto-update delivery date based on status
     if (status === "delivered") {
       order.deliveredAt = new Date();
     }
@@ -679,22 +647,22 @@ router.get("/blogs/:id", async (req, res) => {
 // ── COUPONS ───────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
 
-router.post("/apply-coupon", protect, async (req, res) => {
+// ✅ FIX: removed `protect` so guests on the cart page can also load coupons
+router.get("/coupons", async (req, res) => {
   try {
-    const { code, orderAmount } = req.body;
-    const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
-    if (!coupon) return err(res, "Invalid coupon code");
-    if (coupon.expiryDate && coupon.expiryDate < new Date()) return err(res, "Coupon expired");
-    if (coupon.minOrderAmount > orderAmount) return err(res, `Minimum order ₹${coupon.minOrderAmount} required`);
+    const now = new Date();
+    const coupons = await Coupon.find({
+      isActive: true,
+      $or: [
+        { expiryDate: null },
+        { expiryDate: { $gte: now } }
+      ]
+    }).select("code discountType discountValue minOrderAmount expiryDate").lean();
     
-    const discount = coupon.discountType === "percentage"
-      ? Math.round((orderAmount * coupon.discountValue) / 100)
-      : Math.min(coupon.discountValue, orderAmount);
-    
-    ok(res, { data: { discount } }, `₹${discount} off applied`);
-  } catch (e) { 
-    console.error("Apply coupon error:", e);
-    err(res, e.message); 
+    ok(res, { data: coupons });
+  } catch (e) {
+    console.error("Get coupons error:", e);
+    err(res, e.message);
   }
 });
 
