@@ -1,4 +1,4 @@
-const { GiftPage, GiftTag, GiftFilter, GiftProduct } = require("../models/Giftpage");
+const { GiftPage, GiftTag, GiftFilter, GiftProduct } = require("../models/GiftPage");
 const Product = require("../models/Product");
 
 /* ── GIFT FOR HER ────────────────────────────────────────────── */
@@ -17,7 +17,7 @@ exports.giftHerPage = async (req, res) => {
       title: "Gift For Her",
       page: "gift-her",
       admin: req.session.admin,
-      giftPage: page,
+      GiftPage: page,
       tags,
       filters,
       products,
@@ -190,7 +190,7 @@ exports.giftHimPage = async (req, res) => {
       title: "Gift For Him",
       page: "gift-him",
       admin: req.session.admin,
-      giftPage: page,
+      GiftPage: page,
       tags,
       filters,
       products,

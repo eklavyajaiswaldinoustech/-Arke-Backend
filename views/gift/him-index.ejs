@@ -16,19 +16,19 @@
         <form method="POST" action="/admin/gift-for-him/settings">
           <div class="field">
             <label>Page Title</label>
-            <input type="text" name="title" value="<%= giftPage?.title || '' %>" placeholder="e.g. Gifts For Him" />
+            <input type="text" name="title" value="<%= GiftPage?.title || '' %>" placeholder="e.g. Gifts For Him" />
           </div>
           <div class="field">
             <label>Subtitle</label>
-            <input type="text" name="subtitle" value="<%= giftPage?.subtitle || '' %>" placeholder="e.g. Curated gifts for the special men in your life" />
+            <input type="text" name="subtitle" value="<%= GiftPage?.subtitle || '' %>" placeholder="e.g. Curated gifts for the special men in your life" />
           </div>
           <div class="field">
             <label>Description</label>
-            <textarea name="description" rows="3" placeholder="Page description..."><%= giftPage?.description || '' %></textarea>
+            <textarea name="description" rows="3" placeholder="Page description..."><%= GiftPage?.description || '' %></textarea>
           </div>
           <div class="field">
             <label>Badge Text</label>
-            <input type="text" name="badgeText" value="<%= giftPage?.badgeText || '' %>" placeholder="e.g. New Collection" />
+            <input type="text" name="badgeText" value="<%= GiftPage?.badgeText || '' %>" placeholder="e.g. New Collection" />
           </div>
           <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Save Settings</button>
         </form>
@@ -221,7 +221,7 @@
         </div>
         <div style="margin-bottom:16px;">
           <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Status</div>
-          <div><span class="badge <%= giftPage?.isActive ? 'badge-green' : 'badge-gray' %>"><%= giftPage?.isActive ? 'Active' : 'Inactive' %></span></div>
+          <div><span class="badge <%= GiftPage?.isActive ? 'badge-green' : 'badge-gray' %>"><%= GiftPage?.isActive ? 'Active' : 'Inactive' %></span></div>
         </div>
         <div style="margin-bottom:16px;">
           <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Personas</div>
@@ -235,14 +235,14 @@
           <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Products</div>
           <div><%= products?.length || 0 %></div>
         </div>
-        <% if (giftPage) { %>
+        <% if (GiftPage) { %>
         <div style="margin-bottom:16px;">
           <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Created</div>
-          <div><%= new Date(giftPage.createdAt).toLocaleDateString('en-IN') %></div>
+          <div><%= new Date(GiftPage.createdAt).toLocaleDateString('en-IN') %></div>
         </div>
         <div>
           <div style="color:var(--text2); font-weight:600; margin-bottom:4px;">Last Updated</div>
-          <div><%= new Date(giftPage.updatedAt).toLocaleDateString('en-IN') %></div>
+          <div><%= new Date(GiftPage.updatedAt).toLocaleDateString('en-IN') %></div>
         </div>
         <% } %>
       </div>

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 /* ── Gift Page Settings (shared for both her/him) ── */
-const giftPageSchema = new mongoose.Schema({
+const GiftPageSchema = new mongoose.Schema({
   gender:      { type: String, enum: ["her", "him"], required: true, unique: true },
   title:       { type: String, default: "" },
   subtitle:    { type: String, default: "" },
@@ -38,7 +38,7 @@ const giftProductSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports = {
-  GiftPage:    mongoose.models.GiftPage || mongoose.model("GiftPage", giftPageSchema),
+  GiftPage:    mongoose.models.GiftPage || mongoose.model("GiftPage", GiftPageSchema),
   GiftTag:     mongoose.models.GiftTag || mongoose.model("GiftTag", giftTagSchema),
   GiftFilter:  mongoose.models.GiftFilter || mongoose.model("GiftFilter", giftFilterSchema),
   GiftProduct: mongoose.models.GiftProduct || mongoose.model("GiftProduct", giftProductSchema),

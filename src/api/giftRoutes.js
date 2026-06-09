@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { GiftPage, GiftTag, GiftFilter, GiftProduct } = require("../models/Giftpage");
+const { GiftPage, GiftTag, GiftFilter, GiftProduct } = require("../models/GiftPage");
 const productModel = require('../models/Product')
 
 const ok = (res, data = {}, message = "Success") => res.json({ success: true, message, ...data });
