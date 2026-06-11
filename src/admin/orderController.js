@@ -369,42 +369,40 @@ exports.getOrderDashboard = async (req, res) => {
       createdAt: { $gte: today },
     });
 
-    // Pending orders
-    const pendingOrders = await Order.countDocuments({
-      status: { $in: ["placed", "confirmed", "processing", "packed"] },
-    });
-
-    // Shipped orders
+    // Orders by status
+    const placedOrders = await Order.countDocuments({ status: "placed" });
+    const processingOrders = await Order.countDocuments({ status: "processing" });
+    const deliveredOrders = await Order.countDocuments({ status: "delivered" });
+    const cancelledOrders = await Order.countDocuments({ status: "cancelled" });
+    const pendingOrders = await Order.countDocuments({ status: { $in: ["pending", "confirmed", "packed"] } });
     const shippedOrders = await Order.countDocuments({
       status: { $in: ["shipped", "in_transit", "out_for_delivery"] },
     });
-
-    // Delivered orders
-    const deliveredOrders = await Order.countDocuments({ status: "delivered" });
-
-    // Return requests
     const returnRequests = await Order.countDocuments({
       status: "return_requested",
     });
 
-    // Total revenue
+    // Total revenue from delivered orders
     const revenue = await Order.aggregate([
       { $match: { status: "delivered" } },
       { $group: { _id: null, total: { $sum: "$total" } } },
     ]);
 
-    // Recent orders
+    // Recent orders (include populated items for image access)
     const recentOrders = await Order.find()
       .populate("userId", "name email")
+      .populate({ path: "items.productId", select: "images name" })
       .sort({ createdAt: -1 })
       .limit(10);
 
     return res.render("orders/dashboard", {
       stats: {
         todayOrders,
-        pendingOrders,
-        shippedOrders,
+        pendingOrders: placedOrders,
+        processingOrders,
         deliveredOrders,
+        cancelledOrders,
+        shippedOrders,
         returnRequests,
         totalRevenue: revenue[0]?.total || 0,
       },
@@ -419,3 +417,51 @@ exports.getOrderDashboard = async (req, res) => {
     });
   }
 };
+
+/**
+ * POST /admin/orders/:orderId/status
+ * Update order status and redirect back (for HTML form submission)
+ */
+exports.updateOrderStatusHTML = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status, paymentStatus, location, note, shippingPartner, trackingNumber, expectedDelivery } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      req.session.error = "Order not found";
+      return res.redirect("/admin/orders");
+    }
+
+    if (status) {
+      order.status = status;
+      // Add to status history if status changed
+      order.statusHistory.push({
+        status,
+        date: new Date(),
+        location: location || "",
+        note: note || "Status updated via admin panel",
+        updatedBy: req.session.admin?.name || "System",
+      });
+    }
+
+    if (paymentStatus) {
+      order.paymentStatus = paymentStatus;
+    }
+
+    if (shippingPartner) order.shippingPartner = shippingPartner;
+    if (trackingNumber) order.trackingNumber = trackingNumber;
+    if (expectedDelivery) order.expectedDelivery = new Date(expectedDelivery);
+    if (status === "delivered") order.deliveredAt = new Date();
+
+    await order.save();
+
+    req.session.success = "Order updated successfully";
+    return res.redirect(`/admin/orders/${orderId}/detail`);
+  } catch (err) {
+    console.error("Error updating order:", err);
+    req.session.error = "Failed to update order: " + err.message;
+    return res.redirect(`/admin/orders/${req.params.orderId}/detail`);
+  }
+};
+

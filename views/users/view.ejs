@@ -77,7 +77,7 @@
               <tr>
                 <td style="color:var(--gold);">#<%= (order._id+'').slice(-8).toUpperCase() %></td>
                 <td><%= order.items ? order.items.length : 0 %> items</td>
-                <td style="color:var(--text);">₹<%= (order.totalAmount || 0).toLocaleString() %></td>
+                <td style="color:var(--text);">₹<%= (order.total || 0).toLocaleString() %></td>
                 <td><span class="badge <%= order.paymentStatus==='paid' ? 'badge-green' : 'badge-gold' %>"><%= order.paymentStatus || 'pending' %></span></td>
                 <td>
                   <% const sc = {pending:'badge-gold',processing:'badge-blue',shipped:'badge-blue',delivered:'badge-green',cancelled:'badge-red'}; %>

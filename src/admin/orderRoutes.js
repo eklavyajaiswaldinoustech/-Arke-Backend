@@ -4,6 +4,7 @@ const {
   getAllOrders,
   getOrderDetail,
   updateOrderStatus,
+  updateOrderStatusHTML,
   processRefund,
   approveReturn,
   rejectReturn,
@@ -24,7 +25,10 @@ router.get("/", getAllOrders);
 // Order detail
 router.get("/:orderId/detail", getOrderDetail);
 
-// Update order status
+// Update order status (HTML form submission)
+router.post("/:orderId/status", updateOrderStatusHTML);
+
+// Update order status (API / AJAX)
 router.post("/:orderId/update-status", updateOrderStatus);
 
 // Process refund

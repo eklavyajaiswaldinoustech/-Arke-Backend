@@ -53,27 +53,39 @@ document.querySelectorAll('[data-filter-column]').forEach(select => {
   });
 });
 
-/* ── Auto-dismiss alerts ─── */
-document.querySelectorAll('.alert[data-auto]').forEach(el => {
+/* ── Auto-dismiss alerts & toasts ─── */
+document.querySelectorAll('.alert[data-auto], .toast[data-auto]').forEach(el => {
+  const isToast = el.classList.contains('toast');
   setTimeout(() => {
     el.style.opacity = '0';
-    el.style.transform = 'translateY(-10px)';
-  }, 4000);
-  setTimeout(() => el.remove(), 4500);
-  el.style.transition = 'all 0.5s ease';
+    el.style.transform = isToast ? 'translateX(40px) scale(0.95)' : 'translateY(-10px)';
+  }, 4500);
+  setTimeout(() => el.remove(), 5000);
+  el.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
 });
 
-/* ── Alert close button handler ─── */
-document.querySelectorAll('.alert button').forEach(btn => {
+/* ── Close button handler ─── */
+document.querySelectorAll('.alert button, .toast-close').forEach(btn => {
   btn.addEventListener('click', function() {
-    const alert = this.closest('.alert');
-    if (alert) {
-      alert.style.opacity = '0';
-      alert.style.transform = 'translateY(-10px)';
-      setTimeout(() => alert.remove(), 300);
+    const parent = this.closest('.toast') || this.closest('.alert');
+    if (parent) {
+      const isToast = parent.classList.contains('toast');
+      parent.style.opacity = '0';
+      parent.style.transform = isToast ? 'translateX(40px) scale(0.95)' : 'translateY(-10px)';
+      setTimeout(() => parent.remove(), 400);
     }
   });
 });
+
+/* ── Toast close helper function ─── */
+window.closeToast = function(btn) {
+  const toast = btn.closest('.toast');
+  if (toast) {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(40px) scale(0.95)';
+    setTimeout(() => toast.remove(), 400);
+  }
+};
 
 /* ── Topbar admin name ─── */
 const now = new Date();

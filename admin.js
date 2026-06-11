@@ -20,10 +20,12 @@ app.set("layout", "layouts/main");
 app.set("layout extractScripts", true);
 app.set("layout extractStyles", true);
 
+
 // Static files
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 app.use("/admin/css", express.static(path.join(__dirname, "public/css")));
 app.use("/admin/js", express.static(path.join(__dirname, "public/js")));
+
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -35,8 +37,22 @@ app.use(session({
   cookie: { maxAge: 24 * 60 * 60 * 1000 },
 }));
 
+// ── Flash middleware (one-shot notifications) ────────────────────
+// Extracts success/error from session → res.locals, then clears.
+// The layout reads res.locals so every page gets the toast exactly once.
+app.use((req, res, next) => {
+  res.locals.success = req.session.success || null;
+  res.locals.error   = req.session.error   || null;
+  delete req.session.success;
+  delete req.session.error;
+  // Also expose admin to all views
+  res.locals.admin = req.session.admin || null;
+  next();
+});
+
 // Routes
 app.use("/admin", require("./src/admin/adminRoutes"));
+
 
 // Public order tracking page
 app.get("/track", (req, res) => {

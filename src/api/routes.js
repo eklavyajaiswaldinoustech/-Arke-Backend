@@ -357,7 +357,7 @@ router.post("/place-order", protect, async (req, res) => {
       subtotal += product.price * quantity;
 
       orderItems.push({
-        product: product._id,
+        productId: product._id,
         name: product.name,
         price: product.price,
         quantity,
@@ -396,7 +396,7 @@ router.post("/place-order", protect, async (req, res) => {
       subtotal + shippingCharge - discount;
 
     const order = await Order.create({
-      user: req.user._id,
+      userId: req.user._id,
 
       items: orderItems,
 
@@ -413,16 +413,16 @@ router.post("/place-order", protect, async (req, res) => {
       },
 
       subtotal,
-      shippingCharge,
+      shippingCost: shippingCharge,
       discount,
-      totalAmount,
+      total: totalAmount,
 
       couponCode: couponCode || "",
 
       paymentMethod,
       paymentStatus: "pending",
 
-      status: "pending",
+      status: "placed",
     });
 
     await User.findByIdAndUpdate(req.user._id, {
@@ -453,7 +453,7 @@ router.post("/place-order", protect, async (req, res) => {
 
 router.get("/orders", protect, async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user._id })
+    const orders = await Order.find({ userId: req.user._id })
       .sort({ createdAt: -1 });
     
     const formattedOrders = orders.map(order => ({
@@ -485,7 +485,7 @@ router.get("/order/:orderId", protect, async (req, res) => {
     
     if (!order) return err(res, "Order not found", 404);
     
-    if (order.user.toString() !== req.user._id.toString()) {
+    if (order.userId.toString() !== req.user._id.toString()) {
       return err(res, "Unauthorized", 403);
     }
     
@@ -525,7 +525,7 @@ router.patch("/order/:orderId/status", protect, async (req, res) => {
     
     if (!order) return err(res, "Order not found", 404);
     
-    if (order.user.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+    if (order.userId.toString() !== req.user._id.toString() && !req.user.isAdmin) {
       return err(res, "Unauthorized", 403);
     }
     

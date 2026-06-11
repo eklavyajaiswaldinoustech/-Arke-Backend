@@ -28,6 +28,7 @@ const cartRoutes = require("./src/api/cartRoutes");
 const wishlistRoutes = require("./src/api/wishlisRoutes");
 const orderRoutes = require("./src/api/orderRoutes");
 const adminRoutes = require("./src/admin/adminRoutes");
+const chatbotRoutes = require("./src/api/chatbotRoutes");
 
 console.log("getting categories");
 
@@ -39,6 +40,7 @@ app.use("/api/gifts", giftRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/view-wishlist", wishlistRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/chat", chatbotRoutes);
 // app.use("/admin", require("./src/admin/adminRoutes"));
 // app.use("/admin", adminRoutes);
 

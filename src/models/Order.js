@@ -4,6 +4,7 @@ const statusHistorySchema = new mongoose.Schema({
   status: {
     type: String,
     enum: [
+      "pending",
       "placed",
       "confirmed",
       "processing",
@@ -136,7 +137,7 @@ const orderSchema = new mongoose.Schema(
       default: "cod",
     },
     paymentId: String,
-    paymentStatus: { type: String, enum: ["pending", "completed", "failed"], default: "pending" },
+    paymentStatus: { type: String, enum: ["pending", "paid", "completed", "failed", "refunded"], default: "pending" },
 
     // Return info
     returnInfo: returnInfoSchema,

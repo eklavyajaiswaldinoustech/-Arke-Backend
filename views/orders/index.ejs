@@ -97,7 +97,28 @@
               ₹<%= order.total?.toLocaleString('en-IN') %>
             </td>
             <td style="padding: 14px 16px; font-size: 12px; color: #8a8a8a;">
-              <%= order.items?.length || 0 %> item<%= order.items?.length !== 1 ? 's' : '' %>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <% if (order.items && order.items.length > 0) { %>
+                  <div style="display: flex; gap: -8px;">
+                    <% order.items.slice(0, 3).forEach((item, idx) => { %>
+                      <img src="<%= item.image || (item.product && item.product.images && item.product.images[0]) || 'https://placehold.co/50x50?text=🛍️' %>" 
+                           alt="<%= item.name %>" 
+                           title="<%= item.name %> (x<%= item.quantity %>)"
+                           style="width: 32px; height: 32px; object-fit: cover; border-radius: 6px; border: 2.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-left: <%= idx > 0 ? '-10px' : '0' %>; position: relative; z-index: <%= 10 - idx %>; transition: all 0.2s;"
+                           onmouseover="this.style.transform='translateY(-4px)'; this.style.zIndex='20';"
+                           onmouseout="this.style.transform='none'; this.style.zIndex='<%= 10 - idx %>';"
+                           onerror="this.src='https://placehold.co/50x50?text=🛍️'" />
+                    <% }); %>
+                  </div>
+                  <% if (order.items.length > 3) { %>
+                    <span style="font-size: 10px; font-weight: 700; color: #8b4654; background: rgba(139,70,84,0.08); padding: 2px 6px; border-radius: 8px; margin-left: 2px;">
+                      +<%= order.items.length - 3 %>
+                    </span>
+                  <% } %>
+                <% } else { %>
+                  <span>—</span>
+                <% } %>
+              </div>
             </td>
             <td style="padding: 14px 16px;">
               <span style="display: inline-block; padding: 5px 12px; border-radius: 12px; font-size: 10px; font-weight: 700; background: <%= statusBg %>; color: <%= statusColor %>;">

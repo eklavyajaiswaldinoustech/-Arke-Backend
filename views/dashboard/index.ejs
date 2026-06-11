@@ -1,129 +1,222 @@
+<%
+/* ─── Safe helpers ─── */
+var s        = stats || {};
+var rcOrders = recentOrders     || [];
+var tProds   = topProducts      || [];
+var lsProds  = lowStockProducts || [];
+var nUsers   = newUsers         || [];
+
+/* Revenue chart */
+var chartRows = (s.revenueChart && s.revenueChart.length)
+  ? s.revenueChart
+  : [
+      {day:'Mon',revenue:0},{day:'Tue',revenue:0},{day:'Wed',revenue:0},
+      {day:'Thu',revenue:0},{day:'Fri',revenue:0},{day:'Sat',revenue:0},
+      {day:'Sun',revenue:0}
+    ];
+
+var revValues = chartRows.map(function(d){
+  return (d && typeof d === 'object') ? (Number(d.revenue) || 0) : (Number(d) || 0);
+});
+var maxRev = 1;
+for(var i = 0; i < revValues.length; i++){
+  if(revValues[i] > maxRev) maxRev = revValues[i];
+}
+
+/* Order status bars */
+var statusData = [
+  {label:'Placed',      count: Number(s.pendingOrders)    || 0, color:'#f59e0b'},
+  {label:'Processing',  count: Number(s.processingOrders) || 0, color:'#60a5fa'},
+  {label:'Delivered',   count: Number(s.deliveredOrders)  || 0, color:'#4ade80'},
+  {label:'Cancelled',   count: Number(s.cancelledOrders)  || 0, color:'#e57373'},
+];
+var statusTotal = 0;
+for(var j = 0; j < statusData.length; j++) statusTotal += statusData[j].count;
+if(statusTotal === 0) statusTotal = 1;
+
+/* Badge map */
+var badgeMap = {
+  placed            : 'badge-gold',
+  confirmed         : 'badge-gold',
+  processing        : 'badge-blue',
+  packed            : 'badge-blue',
+  shipped           : 'badge-blue',
+  in_transit        : 'badge-blue',
+  out_for_delivery  : 'badge-blue',
+  delivered         : 'badge-green',
+  cancelled         : 'badge-red',
+  return_requested  : 'badge-red',
+  return_approved   : 'badge-red',
+  return_picked     : 'badge-red',
+  refund_processing : 'badge-red',
+  refunded          : 'badge-gray',
+  return_rejected   : 'badge-red',
+};
+%>
+
+<!-- ── Page Header ── -->
 <div class="page-header">
   <div>
     <h1 class="page-title">Dashboard</h1>
     <p class="page-sub">Welcome back. Here's what's happening at Arke today.</p>
   </div>
-  <div style="font-size:11px; color:var(--text3); letter-spacing:1px;">
-    <%= new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) %>
+  <div style="font-size:11px;color:var(--text3);letter-spacing:1px;">
+    <%= new Date().toLocaleDateString('en-IN',{
+          weekday:'long', day:'numeric',
+          month:'long',   year:'numeric'
+        }) %>
   </div>
 </div>
 
-<!-- ── Stat Cards ─── -->
+
+
+<!-- ── Row 1 Stat Cards ── -->
 <div class="stats-grid">
+
   <div class="stat-card">
     <div class="stat-icon">◎</div>
-    <div class="stat-value"><%= stats.totalOrders || 0 %></div>
+    <div class="stat-value"><%= s.totalOrders || 0 %></div>
     <div class="stat-label">Total Orders</div>
-    <div class="stat-change up"><%= stats.todayOrders || 0 %> today</div>
+    <div class="stat-change up"><%= s.todayOrders || 0 %> today</div>
   </div>
+
   <div class="stat-card">
     <div class="stat-icon" style="color:#4ade80">₹</div>
-    <div class="stat-value">₹<%= ((stats.totalRevenue || 0)/1000).toFixed(1) %>K</div>
+    <div class="stat-value">
+      ₹<%= ((Number(s.totalRevenue) || 0) / 1000).toFixed(1) %>K
+    </div>
     <div class="stat-label">Total Revenue</div>
-    <div class="stat-change up">₹<%= (stats.todayRevenue || 0).toLocaleString() %> today</div>
+    <div class="stat-change up">
+      ₹<%= (Number(s.todayRevenue) || 0).toLocaleString('en-IN') %> today
+    </div>
   </div>
+
   <div class="stat-card">
     <div class="stat-icon">◈</div>
-    <div class="stat-value"><%= stats.totalProducts || 0 %></div>
+    <div class="stat-value"><%= s.totalProducts || 0 %></div>
     <div class="stat-label">Products</div>
   </div>
+
   <div class="stat-card">
     <div class="stat-icon">◷</div>
-    <div class="stat-value"><%= stats.totalUsers || 0 %></div>
+    <div class="stat-value"><%= s.totalUsers || 0 %></div>
     <div class="stat-label">Customers</div>
   </div>
+
 </div>
 
-<!-- ── Second row stats ─── -->
-<div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:28px;">
+<!-- ── Row 2 Stat Cards ── -->
+<div class="stats-grid"
+     style="grid-template-columns:repeat(3,1fr);margin-bottom:28px;">
+
   <div class="stat-card">
     <div class="stat-icon" style="color:#60a5fa">⏳</div>
-    <div class="stat-value"><%= stats.pendingOrders || 0 %></div>
-    <div class="stat-label">Pending Orders</div>
+    <div class="stat-value"><%= s.pendingOrders || 0 %></div>
+    <div class="stat-label">Placed Orders</div>
   </div>
+
   <div class="stat-card">
     <div class="stat-icon" style="color:#f59e0b">◉</div>
-    <div class="stat-value"><%= stats.totalCategories || 0 %></div>
+    <div class="stat-value"><%= s.totalCategories || 0 %></div>
     <div class="stat-label">Categories</div>
   </div>
+
   <div class="stat-card">
     <div class="stat-icon" style="color:#a78bfa">✦</div>
-    <div class="stat-value"><%= stats.totalBlogs || 0 %></div>
+    <div class="stat-value"><%= s.totalBlogs || 0 %></div>
     <div class="stat-label">Blog Posts</div>
   </div>
+
 </div>
 
+<!-- ── Ops Tiles ── -->
 <div class="ops-grid">
-  <a href="/admin/orders?status=pending" class="ops-tile">
-    <span>Pending Orders</span>
-    <strong><%= stats.pendingOrders || 0 %></strong>
+  <a href="/admin/orders?status=placed" class="ops-tile">
+    <span>Placed Orders</span>
+    <strong><%= s.pendingOrders || 0 %></strong>
   </a>
   <a href="/admin/products" class="ops-tile">
     <span>Low Stock</span>
-    <strong><%= lowStockProducts ? lowStockProducts.length : 0 %></strong>
+    <strong><%= lsProds.length %></strong>
   </a>
   <a href="/admin/coupons" class="ops-tile">
     <span>Active Coupons</span>
-    <strong><%= stats.activeCoupons || 0 %></strong>
+    <strong><%= s.activeCoupons || 0 %></strong>
   </a>
   <a href="/admin/bank-details" class="ops-tile">
     <span>Bank Records</span>
-    <strong><%= stats.bankDetailsCount || 0 %></strong>
+    <strong><%= s.bankDetailsCount || 0 %></strong>
   </a>
 </div>
 
-<!-- ── Charts + Recent Orders ─── -->
+<!-- ── Charts Row ── -->
 <div class="chart-grid">
-  <!-- Revenue chart -->
+
+  <!-- Revenue Bar Chart -->
   <div class="card" style="margin-bottom:0">
     <div class="card-header">
       <span class="card-title">Revenue — Last 7 Days</span>
     </div>
     <div class="card-body">
-      <% const maxRev = Math.max(...(stats.revenueChart || [1]).map(d=>d.revenue||d||1)); %>
-      <div class="mini-bar" style="height:120px; align-items:flex-end; gap:6px;">
-        <% (stats.revenueChart || [{day:'Mon',revenue:0},{day:'Tue',revenue:0},{day:'Wed',revenue:0},{day:'Thu',revenue:0},{day:'Fri',revenue:0},{day:'Sat',revenue:0},{day:'Sun',revenue:0}]).forEach(d => { %>
-          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
-            <div class="mini-bar-item" style="width:100%; height:<%= Math.max(4, ((d.revenue||d||0)/maxRev)*100) %>px; background:rgba(100,150,255,0.3); border-radius:2px 2px 0 0; position:relative; transition:background 0.2s;"
-              onmouseover="this.style.background='rgba(100,150,255,0.7)'"
-              onmouseout="this.style.background='rgba(100,150,255,0.3)'"
-              title="₹<%= (d.revenue||d||0).toLocaleString() %>">
+      <div class="mini-bar"
+           style="height:120px;display:flex;align-items:flex-end;gap:6px;">
+        <% for(var ci = 0; ci < chartRows.length; ci++) { %>
+          <%
+            var cd     = chartRows[ci];
+            var cRev   = (cd && typeof cd === 'object')
+                           ? (Number(cd.revenue) || 0)
+                           : (Number(cd) || 0);
+            var cLabel = (cd && typeof cd === 'object' && cd.day) ? cd.day : '';
+            var cPx    = Math.max(4, Math.round((cRev / maxRev) * 100));
+          %>
+          <div style="flex:1;display:flex;flex-direction:column;
+                      align-items:center;gap:6px;">
+            <div style="width:100%;height:<%= cPx %>px;
+                        background:rgba(100,150,255,0.3);
+                        border-radius:2px 2px 0 0;
+                        transition:background .2s;cursor:default;"
+                 onmouseover="this.style.background='rgba(100,150,255,0.7)'"
+                 onmouseout="this.style.background='rgba(100,150,255,0.3)'"
+                 title="₹<%= cRev.toLocaleString('en-IN') %>">
             </div>
-            <span style="font-size:9px; color:var(--text3); letter-spacing:0.5px;"><%= d.day || '' %></span>
+            <span style="font-size:9px;color:var(--text3);
+                         letter-spacing:.5px;"><%= cLabel %></span>
           </div>
-        <% }); %>
+        <% } %>
       </div>
     </div>
   </div>
 
-  <!-- Order status breakdown -->
+  <!-- Order Status Bars -->
   <div class="card" style="margin-bottom:0">
-    <div class="card-header"><span class="card-title">Order Status</span></div>
+    <div class="card-header">
+      <span class="card-title">Order Status</span>
+    </div>
     <div class="card-body">
-      <% const statusData = [
-        {label:'Pending', count: stats.pendingOrders||0, color:'#f59e0b'},
-        {label:'Processing', count: stats.processingOrders||0, color:'#60a5fa'},
-        {label:'Delivered', count: stats.deliveredOrders||0, color:'#4ade80'},
-        {label:'Cancelled', count: stats.cancelledOrders||0, color:'#e57373'},
-      ];
-      const total = statusData.reduce((a,b)=>a+b.count,0)||1;
-      %>
-      <% statusData.forEach(s => { %>
-      <div style="margin-bottom:14px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-          <span style="font-size:12px; color:var(--text2);"><%= s.label %></span>
-          <span style="font-size:12px; color:<%= s.color %>;"><%= s.count %></span>
+      <% for(var si = 0; si < statusData.length; si++) { %>
+        <%
+          var sd   = statusData[si];
+          var spct = Math.round((sd.count / statusTotal) * 100);
+        %>
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;
+                      margin-bottom:5px;">
+            <span style="font-size:12px;color:var(--text2);"><%= sd.label %></span>
+            <span style="font-size:12px;color:<%= sd.color %>;"><%= sd.count %></span>
+          </div>
+          <div style="height:4px;background:rgba(232,228,220,.06);
+                      border-radius:2px;">
+            <div style="height:100%;width:<%= spct %>%;
+                        background:<%= sd.color %>;border-radius:2px;"></div>
+          </div>
         </div>
-        <div style="height:4px; background:rgba(232,228,220,0.06); border-radius:2px;">
-          <div style="height:100%; width:<%= Math.round((s.count/total)*100) %>%; background:<%= s.color %>; border-radius:2px;"></div>
-        </div>
-      </div>
-      <% }); %>
+      <% } %>
     </div>
   </div>
+
 </div>
 
-<!-- ── Recent Orders Table ─── -->
+<!-- ── Recent Orders Table ── -->
 <div class="card" style="margin-top:20px">
   <div class="card-header">
     <span class="card-title">Recent Orders</span>
@@ -138,27 +231,63 @@
             <th>Customer</th>
             <th>Amount</th>
             <th>Status</th>
+            <th>Payment</th>
             <th>Date</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          <% if (recentOrders && recentOrders.length > 0) { %>
-            <% recentOrders.forEach(order => { %>
-            <tr>
-              <td style="color:var(--gold); font-size:12px;">#<%= (order._id+'').slice(-6).toUpperCase() %></td>
-              <td><%= order.user ? (order.user.name || order.user.email || '—') : '—' %></td>
-              <td>₹<%= (order.totalAmount || 0).toLocaleString() %></td>
-              <td>
-                <% const sc = {pending:'badge-gold', processing:'badge-blue', shipped:'badge-blue', delivered:'badge-green', cancelled:'badge-red'}; %>
-                <span class="badge <%= sc[order.status] || 'badge-gray' %>"><%= order.status || 'pending' %></span>
-              </td>
-              <td style="color:var(--text3); font-size:12px;"><%= new Date(order.createdAt).toLocaleDateString('en-IN') %></td>
-              <td><a href="/admin/orders/<%= order._id %>" class="btn btn-ghost btn-sm">View</a></td>
-            </tr>
-            <% }); %>
+          <% if(rcOrders.length > 0) { %>
+            <% for(var oi = 0; oi < rcOrders.length; oi++) { %>
+              <%
+                var ord      = rcOrders[oi];
+                var ordId    = String(ord._id).slice(-6).toUpperCase();
+                var ordCust  = ord.userId
+                               ? (ord.userId.name || ord.userId.email || '—')
+                               : '—';
+                var ordAmt   = (Number(ord.total) || 0).toLocaleString('en-IN');
+                var ordStat  = ord.status || 'placed';
+                var ordBadge = badgeMap[ordStat] || 'badge-gray';
+                var ordPay   = ord.paymentStatus || 'pending';
+                var ordDate  = new Date(ord.createdAt).toLocaleDateString('en-IN');
+              %>
+              <tr>
+                <td style="color:var(--gold);font-size:12px;">
+                  #<%= ordId %>
+                </td>
+                <td style="color:var(--text);font-size:13px;">
+                  <%= ordCust %>
+                </td>
+                <td style="color:var(--text);font-size:13px;">
+                  ₹<%= ordAmt %>
+                </td>
+                <td>
+                  <span class="badge <%= ordBadge %>">
+                    <%= ordStat.replace(/_/g,' ') %>
+                  </span>
+                </td>
+                <td>
+                  <span class="badge <%=
+                    (ordPay === 'completed' || ordPay === 'paid') ? 'badge-green' :
+                    ordPay === 'failed'                           ? 'badge-red'   : 'badge-gold'
+                  %>"><%= ordPay %></span>
+                </td>
+                <td style="color:var(--text3);font-size:12px;">
+                  <%= ordDate %>
+                </td>
+                <td>
+                  <a href="/admin/orders/<%= ord._id %>/detail"
+                     class="btn btn-ghost btn-sm">View</a>
+                </td>
+              </tr>
+            <% } %>
           <% } else { %>
-          <tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text3);">No orders yet</td></tr>
+            <tr>
+              <td colspan="7"
+                  style="text-align:center;padding:40px;color:var(--text3);">
+                No orders yet
+              </td>
+            </tr>
           <% } %>
         </tbody>
       </table>
@@ -166,8 +295,10 @@
   </div>
 </div>
 
-<!-- ── Top Products ─── -->
+<!-- ── Top Products + Quick Actions ── -->
 <div class="chart-grid" style="margin-top:20px;">
+
+  <!-- Top Products -->
   <div class="card" style="margin-bottom:0">
     <div class="card-header">
       <span class="card-title">Top Products</span>
@@ -175,46 +306,112 @@
     </div>
     <div class="card-body" style="padding:0">
       <table>
-        <thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+          </tr>
+        </thead>
         <tbody>
-          <% if (topProducts && topProducts.length > 0) { %>
-            <% topProducts.forEach(p => { %>
-            <tr>
-              <td style="display:flex; align-items:center; gap:12px; padding:10px 16px;">
-                <% if (p.images && p.images[0]) { %>
-                  <img src="<%= p.images[0] %>" class="thumb" />
-                <% } else { %>
-                  <div class="thumb-placeholder">◇</div>
-                <% } %>
-                <span style="color:var(--text); font-size:13px;"><%= p.name %></span>
-              </td>
-              <td>₹<%= (p.price || 0).toLocaleString() %></td>
-              <td style="color:<%= (p.stock||0) < 5 ? 'var(--red)' : 'var(--text2)' %>"><%= p.stock || 0 %></td>
-              <td><span class="badge <%= p.isActive ? 'badge-green' : 'badge-gray' %>"><%= p.isActive ? 'Active' : 'Draft' %></span></td>
-            </tr>
-            <% }); %>
+          <% if(tProds.length > 0) { %>
+            <% for(var pi = 0; pi < tProds.length; pi++) { %>
+              <% var tp = tProds[pi]; %>
+              <tr>
+                <td style="display:flex;align-items:center;
+                           gap:12px;padding:10px 16px;">
+                  <% if(tp.images && tp.images[0]) { %>
+                    <img src="<%= tp.images[0] %>"
+                         class="thumb" alt="<%= tp.name %>"
+                         style="width:36px;height:36px;object-fit:cover;
+                                border-radius:4px;" />
+                  <% } else { %>
+                    <div class="thumb-placeholder"
+                         style="width:36px;height:36px;display:flex;
+                                align-items:center;justify-content:center;
+                                background:rgba(255,255,255,0.04);
+                                border-radius:4px;color:var(--text3);">◇</div>
+                  <% } %>
+                  <span style="color:var(--text);font-size:13px;">
+                    <%= tp.name %>
+                  </span>
+                </td>
+                <td style="font-size:13px;">
+                  ₹<%= (Number(tp.price) || 0).toLocaleString('en-IN') %>
+                </td>
+                <td style="color:<%= (Number(tp.stock)||0) < 5
+                                     ? 'var(--red)' : 'var(--text2)' %>;
+                           font-size:13px;">
+                  <%= tp.stock || 0 %>
+                </td>
+                <td>
+                  <span class="badge
+                    <%= tp.isActive ? 'badge-green' : 'badge-gray' %>">
+                    <%= tp.isActive ? 'Active' : 'Draft' %>
+                  </span>
+                </td>
+              </tr>
+            <% } %>
           <% } else { %>
-          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3);">No products yet</td></tr>
+            <tr>
+              <td colspan="4"
+                  style="text-align:center;padding:32px;color:var(--text3);">
+                No products yet
+              </td>
+            </tr>
           <% } %>
         </tbody>
       </table>
     </div>
   </div>
 
+  <!-- Quick Actions -->
   <div class="card" style="margin-bottom:0">
-    <div class="card-header"><span class="card-title">Quick Actions</span></div>
-    <div class="card-body" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-      <a href="/admin/products/add" class="btn btn-primary" style="justify-content:center; padding:12px;">+ Add Product</a>
-      <a href="/admin/categories" class="btn btn-secondary" style="justify-content:center; padding:12px;">+ Category</a>
-      <a href="/admin/banners" class="btn btn-secondary" style="justify-content:center; padding:12px;">+ Banner</a>
-      <a href="/admin/blog/add" class="btn btn-secondary" style="justify-content:center; padding:12px;">+ Blog Post</a>
-      <a href="/admin/coupons" class="btn btn-secondary" style="justify-content:center; padding:12px;">+ Coupon</a>
-      <a href="/admin/orders" class="btn btn-ghost" style="justify-content:center; padding:12px;">View Orders</a>
+    <div class="card-header">
+      <span class="card-title">Quick Actions</span>
+    </div>
+    <div class="card-body"
+         style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <a href="/admin/products/add"
+         class="btn btn-primary"
+         style="justify-content:center;padding:12px;">
+        + Add Product
+      </a>
+      <a href="/admin/categories"
+         class="btn btn-secondary"
+         style="justify-content:center;padding:12px;">
+        + Category
+      </a>
+      <a href="/admin/banners"
+         class="btn btn-secondary"
+         style="justify-content:center;padding:12px;">
+        + Banner
+      </a>
+      <a href="/admin/blog/add"
+         class="btn btn-secondary"
+         style="justify-content:center;padding:12px;">
+        + Blog Post
+      </a>
+      <a href="/admin/coupons"
+         class="btn btn-secondary"
+         style="justify-content:center;padding:12px;">
+        + Coupon
+      </a>
+      <a href="/admin/orders"
+         class="btn btn-ghost"
+         style="justify-content:center;padding:12px;">
+        View Orders
+      </a>
     </div>
   </div>
+
 </div>
 
+<!-- ── Inventory Watch + New Customers ── -->
 <div class="chart-grid" style="margin-top:20px;">
+
+  <!-- Inventory Watch -->
   <div class="card" style="margin-bottom:0">
     <div class="card-header">
       <span class="card-title">Inventory Watch</span>
@@ -222,44 +419,97 @@
     </div>
     <div class="card-body" style="padding:0">
       <table>
-        <thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th></th></tr></thead>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Stock</th>
+            <th></th>
+          </tr>
+        </thead>
         <tbody>
-          <% if (lowStockProducts && lowStockProducts.length) { %>
-            <% lowStockProducts.forEach(p => { %>
-            <tr>
-              <td style="color:var(--text);"><%= p.name %></td>
-              <td style="color:var(--text3);"><%= p.sku || '—' %></td>
-              <td><span class="badge <%= (p.stock || 0) === 0 ? 'badge-red' : 'badge-gold' %>"><%= p.stock || 0 %></span></td>
-              <td><a href="/admin/products/edit/<%= p._id %>" class="btn btn-ghost btn-sm">Edit</a></td>
-            </tr>
-            <% }); %>
+          <% if(lsProds.length > 0) { %>
+            <% for(var li = 0; li < lsProds.length; li++) { %>
+              <% var lp = lsProds[li]; %>
+              <tr>
+                <td style="color:var(--text);font-size:13px;">
+                  <%= lp.name %>
+                </td>
+                <td style="color:var(--text3);font-size:12px;">
+                  <%= lp.sku || '—' %>
+                </td>
+                <td>
+                  <span class="badge
+                    <%= (Number(lp.stock) || 0) === 0
+                         ? 'badge-red' : 'badge-gold' %>">
+                    <%= lp.stock || 0 %>
+                  </span>
+                </td>
+                <td>
+                  <a href="/admin/products/edit/<%= lp._id %>"
+                     class="btn btn-ghost btn-sm">Edit</a>
+                </td>
+              </tr>
+            <% } %>
           <% } else { %>
-            <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3);">Inventory levels look healthy.</td></tr>
+            <tr>
+              <td colspan="4"
+                  style="text-align:center;padding:32px;color:var(--text3);">
+                Inventory levels look healthy.
+              </td>
+            </tr>
           <% } %>
         </tbody>
       </table>
     </div>
   </div>
 
+  <!-- New Customers -->
   <div class="card" style="margin-bottom:0">
     <div class="card-header">
       <span class="card-title">New Customers</span>
       <a href="/admin/users" class="btn btn-ghost btn-sm">Users</a>
     </div>
     <div class="card-body">
-      <% if (newUsers && newUsers.length) { %>
-        <% newUsers.forEach(u => { %>
-          <a href="/admin/users/<%= u._id %>" class="mini-person">
-            <span><%= (u.name || u.email || '?')[0] %></span>
-            <div>
-              <strong><%= u.name || 'Unnamed customer' %></strong>
-              <small><%= u.email %></small>
+      <% if(nUsers.length > 0) { %>
+        <% for(var ui = 0; ui < nUsers.length; ui++) { %>
+          <%
+            var nu      = nUsers[ui];
+            var nuInit  = ((nu.name || nu.email || '?')[0]).toUpperCase();
+            var nuName  = nu.name  || 'Unnamed customer';
+            var nuEmail = nu.email || '';
+          %>
+          <a href="/admin/users/<%= nu._id %>" class="mini-person"
+             style="display:flex;align-items:center;gap:12px;
+                    padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);
+                    text-decoration:none;color:inherit;">
+            <span style="width:36px;height:36px;border-radius:50%;
+                         background:rgba(100,150,255,0.15);
+                         display:flex;align-items:center;justify-content:center;
+                         font-size:14px;font-weight:600;color:#6496ff;
+                         flex-shrink:0;">
+              <%= nuInit %>
+            </span>
+            <div style="min-width:0;">
+              <strong style="display:block;font-size:13px;
+                             color:var(--text);white-space:nowrap;
+                             overflow:hidden;text-overflow:ellipsis;">
+                <%= nuName %>
+              </strong>
+              <small style="font-size:11px;color:var(--text3);
+                            white-space:nowrap;overflow:hidden;
+                            text-overflow:ellipsis;display:block;">
+                <%= nuEmail %>
+              </small>
             </div>
           </a>
-        <% }); %>
+        <% } %>
       <% } else { %>
-        <p style="color:var(--text3);font-size:13px;">No customers yet.</p>
+        <p style="color:var(--text3);font-size:13px;margin:0;">
+          No new customers yet.
+        </p>
       <% } %>
     </div>
   </div>
+
 </div>

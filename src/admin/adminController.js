@@ -14,13 +14,14 @@ const renderPage = async (res, view, data = {}) => {
 };
 
 /* ── Auth ───────────────────────────────────────────────────────────── */
-exports.loginPage = (req, res) => res.render("auth/login", { error: null, layout: false, title: "Login" });
+exports.loginPage = (req, res) =>
+  res.render("auth/login", { error: null, layout: false, title: "Login" });
 
 exports.loginPost = async (req, res) => {
   try {
-    const email = String(req.body.email || "").trim().toLowerCase();
+    const email    = String(req.body.email    || "").trim().toLowerCase();
     const password = String(req.body.password || "");
-    const admin = await Admin.findOne({ email, isActive: true });
+    const admin    = await Admin.findOne({ email, isActive: true });
     if (!admin) return res.render("auth/login", { error: "Invalid email or password", layout: false });
     const match = await admin.comparePassword(password);
     if (!match) return res.render("auth/login", { error: "Invalid email or password", layout: false });
@@ -31,175 +32,283 @@ exports.loginPost = async (req, res) => {
   }
 };
 
-exports.logout = (req, res) => { req.session.destroy(); res.redirect("/admin/login"); };
+exports.logout = (req, res) => {
+  req.session.destroy();
+  res.redirect("/admin/login");
+};
 
 /* ── Dashboard ──────────────────────────────────────────────────────── */
 exports.dashboard = async (req, res) => {
   try {
-    const [totalOrders, totalRevenueAgg, totalProducts, totalUsers, totalCategories, totalBlogs,
-      pendingOrders, processingOrders, deliveredOrders, cancelledOrders, recentOrders, topProducts,
-      lowStockProducts, activeCoupons, bankDetailsCount, newUsers, todayOrders, todayRevenueAgg] = await Promise.all([
+    const [
+      totalOrders,
+      totalRevenueAgg,
+      totalProducts,
+      totalUsers,
+      totalCategories,
+      totalBlogs,
+      pendingOrders,
+      processingOrders,
+      deliveredOrders,
+      cancelledOrders,
+      recentOrders,
+      topProducts,
+      lowStockProducts,
+      activeCoupons,
+      bankDetailsCount,
+      newUsers,
+      todayOrders,
+      todayRevenueAgg,
+    ] = await Promise.all([
       Order.countDocuments(),
-      Order.aggregate([{ $match: { paymentStatus: "paid" } }, { $group: { _id: null, total: { $sum: "$totalAmount" } } }]),
+
+      Order.aggregate([
+        { $match: { paymentStatus: { $in: ["completed", "paid"] } } },
+        { $group: { _id: null, total: { $sum: "$total" } } },
+      ]),
+
       Product.countDocuments(),
       User.countDocuments(),
       Category.countDocuments(),
       Blog.countDocuments(),
-      Order.countDocuments({ status: "pending" }),
+
+      Order.countDocuments({ status: "placed" }),
       Order.countDocuments({ status: "processing" }),
       Order.countDocuments({ status: "delivered" }),
       Order.countDocuments({ status: "cancelled" }),
-      Order.find().sort({ createdAt: -1 }).limit(8).populate("user", "name email"),
-      Product.find({ isActive: true }).sort({ createdAt: -1 }).limit(5),
-      Product.find({ isActive: true, stock: { $lte: 5 } }).sort({ stock: 1, createdAt: -1 }).limit(6),
+
+      Order.find()
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .populate("userId", "name email")
+        .lean(),
+
+      Product.find({ isActive: true })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+
+      Product.find({ isActive: true, stock: { $lte: 5 } })
+        .sort({ stock: 1, createdAt: -1 })
+        .limit(6)
+        .lean(),
+
       Coupon.countDocuments({ isActive: true }),
       BankDetails.countDocuments(),
-      User.find().sort({ createdAt: -1 }).limit(5),
+
+      User.find().sort({ createdAt: -1 }).limit(5).lean(),
+
       Order.countDocuments({
         createdAt: {
           $gte: new Date(new Date().setHours(0, 0, 0, 0)),
           $lte: new Date(new Date().setHours(23, 59, 59, 999)),
         },
       }),
+
       Order.aggregate([
         {
           $match: {
-            paymentStatus: "paid",
+            paymentStatus: { $in: ["completed", "paid"] },
             createdAt: {
               $gte: new Date(new Date().setHours(0, 0, 0, 0)),
               $lte: new Date(new Date().setHours(23, 59, 59, 999)),
             },
           },
         },
-        { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+        { $group: { _id: null, total: { $sum: "$total" } } },
       ]),
     ]);
 
-    const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    /* Revenue chart — last 7 days */
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const revenueChart = [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      const start = new Date(d); start.setHours(0,0,0,0);
-      const end = new Date(d); end.setHours(23,59,59,999);
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const start = new Date(d); start.setHours(0, 0, 0, 0);
+      const end   = new Date(d); end.setHours(23, 59, 59, 999);
       const agg = await Order.aggregate([
-        { $match: { createdAt: { $gte: start, $lte: end }, paymentStatus: "paid" } },
-        { $group: { _id: null, revenue: { $sum: "$totalAmount" } } },
+        {
+          $match: {
+            createdAt: { $gte: start, $lte: end },
+            paymentStatus: { $in: ["completed", "paid"] },
+          },
+        },
+        { $group: { _id: null, revenue: { $sum: "$total" } } },
       ]);
       revenueChart.push({ day: days[start.getDay()], revenue: agg[0]?.revenue || 0 });
     }
 
     res.render("dashboard/index", {
-      title: "Dashboard", page: "dashboard", admin: req.session.admin,
-      stats: {
-        totalOrders, totalRevenue: totalRevenueAgg[0]?.total || 0,
-        totalProducts, totalUsers, totalCategories, totalBlogs,
-        pendingOrders, processingOrders, deliveredOrders, cancelledOrders, revenueChart,
-        activeCoupons, bankDetailsCount, todayOrders, todayRevenue: todayRevenueAgg[0]?.total || 0,
-      },
-      recentOrders, topProducts, lowStockProducts, newUsers,
-      success: req.session.success || null, error: req.session.error || null,
-    });
-    delete req.session.success; delete req.session.error;
-  } catch (err) {
-    console.error(err);
-    res.render("dashboard/index", {
       title: "Dashboard",
-      page: "dashboard",
+      page:  "dashboard",
       admin: req.session.admin,
-      stats: {},
-      recentOrders: [],
-      topProducts: [],
-      lowStockProducts: [],
-      newUsers: [],
+      stats: {
+        totalOrders,
+        totalRevenue:      totalRevenueAgg[0]?.total || 0,
+        totalProducts,
+        totalUsers,
+        totalCategories,
+        totalBlogs,
+        pendingOrders,
+        processingOrders,
+        deliveredOrders,
+        cancelledOrders,
+        revenueChart,
+        activeCoupons,
+        bankDetailsCount,
+        todayOrders,
+        todayRevenue: todayRevenueAgg[0]?.total || 0,
+      },
+      recentOrders,
+      topProducts,
+      lowStockProducts,
+      newUsers,
+      success: req.session.success || null,
+      error:   req.session.error   || null,
+    });
+    delete req.session.success;
+    delete req.session.error;
+
+  } catch (err) {
+    console.error("Dashboard error:", err);
+    res.render("dashboard/index", {
+      title:           "Dashboard",
+      page:            "dashboard",
+      admin:           req.session.admin,
+      stats:           {},
+      recentOrders:    [],
+      topProducts:     [],
+      lowStockProducts:[],
+      newUsers:        [],
+      success:         null,
+      error:           null,
     });
   }
 };
 
 /* ── Products ───────────────────────────────────────────────────────── */
 exports.productList = async (req, res) => {
-  const products = await Product.find().populate("category", "name").sort({ createdAt: -1 });
+  const products   = await Product.find().populate("category", "name").sort({ createdAt: -1 });
   const categories = await Category.find({ isActive: true });
-  res.render("products/index", { title: "Products", page: "products", admin: req.session.admin, products, categories, success: req.session.success, error: req.session.error });
+  res.render("products/index", {
+    title: "Products", page: "products", admin: req.session.admin,
+    products, categories,
+    success: req.session.success, error: req.session.error,
+  });
   delete req.session.success; delete req.session.error;
 };
 
 exports.addProductPage = async (req, res) => {
-  const categories = await Category.find({ isActive: true });
+  const categories    = await Category.find({ isActive: true });
   const subCategories = await SubCategory.find({ isActive: true });
-  res.render("products/form", { title: "Add Product", page: "products", admin: req.session.admin, product: null, categories, subCategories });
+  res.render("products/form", {
+    title: "Add Product", page: "products", admin: req.session.admin,
+    product: null, categories, subCategories,
+  });
 };
 
 exports.addProduct = async (req, res) => {
   try {
-    const images = req.files?.images ? req.files.images.map(f => `/uploads/${f.filename}`) : [];
-    const { name, price, mrp, sku, stock, description, shortDescription, material, metalType, weight, size, tags, category, subCategory, isActive, isFeatured, isNewArrival, isBestSeller, metaTitle, metaDescription, giftFor } = req.body;
-    
-    console.log("Adding product with data:", { name, price, category, giftFor });
-    
-    const productData = {
-      name, 
-      price: Number(price), 
-      mrp: mrp ? Number(mrp) : null, 
-      sku, 
-      stock: Number(stock || 0),
-      description, 
-      shortDescription, 
-      material, 
-      metalType, 
-      weight: weight ? Number(weight) : null, 
+    const images = req.files?.images
+      ? req.files.images.map(f => `/uploads/${f.filename}`)
+      : [];
+
+    const {
+      name, price, mrp, sku, stock, description, shortDescription,
+      material, metalType, weight, size, tags, category, subCategory,
+      isActive, isFeatured, isNewArrival, isBestSeller,
+      metaTitle, metaDescription, giftFor,
+    } = req.body;
+
+    const product = await Product.create({
+      name,
+      price:            Number(price),
+      mrp:              mrp ? Number(mrp) : null,
+      sku,
+      stock:            Number(stock || 0),
+      description,
+      shortDescription,
+      material,
+      metalType,
+      weight:           weight ? Number(weight) : null,
       size,
-      tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [],
-      category: category || null, 
-      subCategory: subCategory || null, 
+      tags:             tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [],
+      category:         category    || null,
+      subCategory:      subCategory || null,
       images,
-      isActive: isActive === "true", 
-      isFeatured: !!isFeatured, 
-      isNewArrival: !!isNewArrival, 
-      isBestSeller: !!isBestSeller,
-      metaTitle, 
+      isActive:         isActive === "true",
+      isFeatured:       !!isFeatured,
+      isNewArrival:     !!isNewArrival,
+      isBestSeller:     !!isBestSeller,
+      metaTitle,
       metaDescription,
-      giftFor: giftFor || null,
-    };
-    
-    console.log("Product data to save:", productData);
-    
-    const product = await Product.create(productData);
-    
-    console.log("Product saved:", product._id);
-    
+      giftFor:          giftFor || null,
+    });
+
     req.session.success = `Product "${name}" added.`;
     res.redirect("/admin/products");
-  } catch (err) { 
+  } catch (err) {
     console.error("Error adding product:", err);
-    req.session.error = err.message; 
-    res.redirect("/admin/products/add"); 
+    req.session.error = err.message;
+    res.redirect("/admin/products/add");
   }
 };
 
 exports.editProductPage = async (req, res) => {
-  const product = await Product.findById(req.params.id);
-  const categories = await Category.find({ isActive: true });
+  const product       = await Product.findById(req.params.id);
+  const categories    = await Category.find({ isActive: true });
   const subCategories = await SubCategory.find({ isActive: true });
-  res.render("products/form", { title: "Edit Product", page: "products", admin: req.session.admin, product, categories, subCategories });
+  res.render("products/form", {
+    title: "Edit Product", page: "products", admin: req.session.admin,
+    product, categories, subCategories,
+  });
 };
 
 exports.editProduct = async (req, res) => {
   try {
-    const { name, price, mrp, sku, stock, description, shortDescription, material, metalType, weight, size, tags, category, subCategory, isActive, isFeatured, isNewArrival, isBestSeller, metaTitle, metaDescription, giftFor } = req.body;
+    const {
+      name, price, mrp, sku, stock, description, shortDescription,
+      material, metalType, weight, size, tags, category, subCategory,
+      isActive, isFeatured, isNewArrival, isBestSeller,
+      metaTitle, metaDescription, giftFor,
+    } = req.body;
+
     const update = {
-      name, price: Number(price), mrp: mrp ? Number(mrp) : null, sku, stock: Number(stock || 0),
-      description, shortDescription, material, metalType, weight: weight ? Number(weight) : null, size,
-      tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [],
-      category, subCategory: subCategory || null,
-      isActive: isActive === "true", isFeatured: !!isFeatured, isNewArrival: !!isNewArrival, isBestSeller: !!isBestSeller,
-      metaTitle, metaDescription,
-      giftFor: giftFor || null,
+      name,
+      price:            Number(price),
+      mrp:              mrp ? Number(mrp) : null,
+      sku,
+      stock:            Number(stock || 0),
+      description,
+      shortDescription,
+      material,
+      metalType,
+      weight:           weight ? Number(weight) : null,
+      size,
+      tags:             tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [],
+      category:         category    || null,
+      subCategory:      subCategory || null,
+      isActive:         isActive === "true",
+      isFeatured:       !!isFeatured,
+      isNewArrival:     !!isNewArrival,
+      isBestSeller:     !!isBestSeller,
+      metaTitle,
+      metaDescription,
+      giftFor:          giftFor || null,
     };
-    if (req.files?.images?.length) update.images = req.files.images.map(f => `/uploads/${f.filename}`);
+
+    if (req.files?.images?.length) {
+      update.images = req.files.images.map(f => `/uploads/${f.filename}`);
+    }
+
     const p = await Product.findByIdAndUpdate(req.params.id, update, { new: true });
     req.session.success = `"${p.name}" updated.`;
     res.redirect("/admin/products");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/products/edit/" + req.params.id); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/products/edit/" + req.params.id);
+  }
 };
 
 exports.deleteProduct = async (req, res) => {
@@ -211,9 +320,13 @@ exports.deleteProduct = async (req, res) => {
 /* ── Categories ─────────────────────────────────────────────────────── */
 exports.categoryList = async (req, res) => {
   const categories = await Category.find().sort({ createdAt: -1 });
-  const editId = req.query.edit;
-  const editCat = editId ? categories.find(c => c._id.toString() === editId) : null;
-  res.render("categories/index", { title: "Categories", page: "categories", admin: req.session.admin, categories, editCat: editCat || null, success: req.session.success, error: req.session.error });
+  const editId     = req.query.edit;
+  const editCat    = editId ? categories.find(c => c._id.toString() === editId) : null;
+  res.render("categories/index", {
+    title: "Categories", page: "categories", admin: req.session.admin,
+    categories, editCat: editCat || null,
+    success: req.session.success, error: req.session.error,
+  });
   delete req.session.success; delete req.session.error;
 };
 
@@ -224,7 +337,10 @@ exports.addCategory = async (req, res) => {
     await Category.create({ name, description, image, isActive: isActive === "true" });
     req.session.success = `Category "${name}" added.`;
     res.redirect("/admin/categories");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/categories"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/categories");
+  }
 };
 
 exports.editCategory = async (req, res) => {
@@ -235,7 +351,10 @@ exports.editCategory = async (req, res) => {
     await Category.findByIdAndUpdate(req.params.id, update);
     req.session.success = "Category updated.";
     res.redirect("/admin/categories");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/categories"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/categories");
+  }
 };
 
 exports.deleteCategory = async (req, res) => {
@@ -247,7 +366,10 @@ exports.deleteCategory = async (req, res) => {
 /* ── Banners ────────────────────────────────────────────────────────── */
 exports.bannerList = async (req, res) => {
   const banners = await Banner.find().sort({ order: 1, createdAt: -1 });
-  res.render("banners/index", { title: "Banners", page: "banners", admin: req.session.admin, banners, success: req.session.success, error: req.session.error });
+  res.render("banners/index", {
+    title: "Banners", page: "banners", admin: req.session.admin,
+    banners, success: req.session.success, error: req.session.error,
+  });
   delete req.session.success; delete req.session.error;
 };
 
@@ -255,30 +377,51 @@ exports.addBanner = async (req, res) => {
   try {
     const { title, subtitle, ctaText, ctaLink, isActive } = req.body;
     const image = req.file ? `/uploads/${req.file.filename}` : null;
-    if (!image) { req.session.error = "Please upload a banner image."; return res.redirect("/admin/banners"); }
+    if (!image) {
+      req.session.error = "Please upload a banner image.";
+      return res.redirect("/admin/banners");
+    }
     await Banner.create({ title, subtitle, ctaText, ctaLink, image, isActive: isActive === "true" });
     req.session.success = "Banner added.";
     res.redirect("/admin/banners");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/banners"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/banners");
+  }
 };
 
 exports.editBannerPage = async (req, res) => {
   try {
     const banner = await Banner.findById(req.params.id);
-    if (!banner) { req.session.error = "Banner not found."; return res.redirect("/admin/banners"); }
-    res.render("banners/edit-banner", { title: "Edit Banner", page: "banners", admin: req.session.admin, banner });
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/banners"); }
+    if (!banner) {
+      req.session.error = "Banner not found.";
+      return res.redirect("/admin/banners");
+    }
+    res.render("banners/edit-banner", {
+      title: "Edit Banner", page: "banners", admin: req.session.admin, banner,
+    });
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/banners");
+  }
 };
 
 exports.editBanner = async (req, res) => {
   try {
     const { title, subtitle, description, ctaText, ctaLink, order, isActive } = req.body;
-    const update = { title, subtitle, description, ctaText, ctaLink, order: Number(order) || 0, isActive: isActive === "true" };
+    const update = {
+      title, subtitle, description, ctaText, ctaLink,
+      order:    Number(order) || 0,
+      isActive: isActive === "true",
+    };
     if (req.file) update.image = `/uploads/${req.file.filename}`;
     const banner = await Banner.findByIdAndUpdate(req.params.id, update, { new: true });
     req.session.success = `Banner "${banner.title}" updated.`;
     res.redirect("/admin/banners");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/banners/edit/" + req.params.id); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/banners/edit/" + req.params.id);
+  }
 };
 
 exports.deleteBanner = async (req, res) => {
@@ -290,45 +433,64 @@ exports.deleteBanner = async (req, res) => {
 /* ── Blog ───────────────────────────────────────────────────────────── */
 exports.blogList = async (req, res) => {
   const blogs = await Blog.find().sort({ createdAt: -1 });
-  res.render("blog/index", { title: "Blog", page: "blog", admin: req.session.admin, blogs, success: req.session.success, error: req.session.error });
+  res.render("blog/index", {
+    title: "Blog", page: "blog", admin: req.session.admin,
+    blogs, success: req.session.success, error: req.session.error,
+  });
   delete req.session.success; delete req.session.error;
 };
 
-exports.addBlogPage = (req, res) => res.render("blog/form", { title: "New Post", page: "blog", admin: req.session.admin, blog: null });
+exports.addBlogPage = (req, res) =>
+  res.render("blog/form", {
+    title: "New Post", page: "blog", admin: req.session.admin, blog: null,
+  });
 
 exports.addBlog = async (req, res) => {
   try {
     const { title, excerpt, content, category, tags, isPublished, metaTitle, metaDescription } = req.body;
     const image = req.file ? `/uploads/${req.file.filename}` : null;
     await Blog.create({
-      title, excerpt, content, category, image, thumbnail: image,
+      title, excerpt, content, category,
+      image, thumbnail: image,
       isPublished: isPublished === "true",
       tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [],
       metaTitle, metaDescription,
     });
     req.session.success = "Blog post published.";
     res.redirect("/admin/blog");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/blog/add"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/blog/add");
+  }
 };
 
 exports.editBlogPage = async (req, res) => {
   const blog = await Blog.findById(req.params.id);
-  res.render("blog/form", { title: "Edit Post", page: "blog", admin: req.session.admin, blog });
+  res.render("blog/form", {
+    title: "Edit Post", page: "blog", admin: req.session.admin, blog,
+  });
 };
 
 exports.editBlog = async (req, res) => {
   try {
     const { title, excerpt, content, category, tags, isPublished, metaTitle, metaDescription } = req.body;
     const update = {
-      title, excerpt, content, category, isPublished: isPublished === "true",
+      title, excerpt, content, category,
+      isPublished: isPublished === "true",
       tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [],
       metaTitle, metaDescription,
     };
-    if (req.file) { update.image = `/uploads/${req.file.filename}`; update.thumbnail = update.image; }
+    if (req.file) {
+      update.image     = `/uploads/${req.file.filename}`;
+      update.thumbnail = update.image;
+    }
     await Blog.findByIdAndUpdate(req.params.id, update);
     req.session.success = "Post updated.";
     res.redirect("/admin/blog");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/blog/edit/" + req.params.id); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/blog/edit/" + req.params.id);
+  }
 };
 
 exports.deleteBlog = async (req, res) => {
@@ -340,14 +502,25 @@ exports.deleteBlog = async (req, res) => {
 /* ── Orders ─────────────────────────────────────────────────────────── */
 exports.orderList = async (req, res) => {
   const filter = req.query.status ? { status: req.query.status } : {};
-  const orders = await Order.find(filter).populate("user", "name email").sort({ createdAt: -1 });
-  res.render("orders/index", { title: "Orders", page: "orders", admin: req.session.admin, orders, currentStatus: req.query.status || "", success: req.session.success });
+  const orders = await Order.find(filter)
+    .populate("userId", "name email")
+    .sort({ createdAt: -1 });
+  res.render("orders/index", {
+    title: "Orders", page: "orders", admin: req.session.admin,
+    orders, currentStatus: req.query.status || "",
+    success: req.session.success,
+  });
   delete req.session.success;
 };
 
 exports.orderDetail = async (req, res) => {
-  const order = await Order.findById(req.params.id).populate("user", "name email phone").populate("items.product", "name images sku");
-  res.render("orders/detail", { title: "Order Detail", page: "orders", admin: req.session.admin, order, success: req.session.success });
+  const order = await Order.findById(req.params.id)
+    .populate("userId", "name email phone")
+    .populate("items.productId", "name images sku");
+  res.render("orders/detail", {
+    title: "Order Detail", page: "orders", admin: req.session.admin,
+    order, success: req.session.success,
+  });
   delete req.session.success;
 };
 
@@ -361,7 +534,10 @@ exports.updateOrderStatus = async (req, res) => {
 /* ── Users ──────────────────────────────────────────────────────────── */
 exports.userList = async (req, res) => {
   const users = await User.find().sort({ createdAt: -1 });
-  res.render("users/index", { title: "Customers", page: "users", admin: req.session.admin, users, success: req.session.success, error: req.session.error });
+  res.render("users/index", {
+    title: "Customers", page: "users", admin: req.session.admin,
+    users, success: req.session.success, error: req.session.error,
+  });
   delete req.session.success; delete req.session.error;
 };
 
@@ -369,7 +545,11 @@ exports.userDetail = async (req, res) => {
   try {
     const [user, orders, bankDetails] = await Promise.all([
       User.findById(req.params.id),
-      Order.find({ user: req.params.id }).sort({ createdAt: -1 }).limit(20).populate("items.product", "name images sku"),
+      Order.find({ userId: req.params.id })
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .populate("items.productId", "name images sku")
+        .lean(),
       BankDetails.findOne({ user: req.params.id }),
     ]);
 
@@ -378,28 +558,35 @@ exports.userDetail = async (req, res) => {
       return res.redirect("/admin/users");
     }
 
-    const paidOrders = orders.filter(order => order.paymentStatus === "paid");
-    const totalSpent = paidOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    const paidOrders = orders.filter(o => ["completed", "paid"].includes(o.paymentStatus));
+    const totalSpent = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
     const stats = {
-      totalOrders: orders.length,
-      paidOrders: paidOrders.length,
+      totalOrders:       orders.length,
+      paidOrders:        paidOrders.length,
       totalSpent,
-      averageOrderValue: paidOrders.length ? Math.round(totalSpent / paidOrders.length) : 0,
-      pendingOrders: orders.filter(order => ["pending", "processing", "shipped"].includes(order.status)).length,
+      averageOrderValue: paidOrders.length
+        ? Math.round(totalSpent / paidOrders.length)
+        : 0,
+      pendingOrders: orders.filter(o =>
+        ["placed", "confirmed", "processing", "packed",
+         "shipped", "in_transit", "out_for_delivery"].includes(o.status)
+      ).length,
     };
 
     res.render("users/view", {
-      title: user.name || "Customer Detail",
-      page: "users",
-      admin: req.session.admin,
+      title:   user.name || "Customer Detail",
+      page:    "users",
+      admin:   req.session.admin,
       user,
       orders,
       bankDetails,
       stats,
       success: req.session.success,
-      error: req.session.error,
+      error:   req.session.error,
     });
     delete req.session.success; delete req.session.error;
+
   } catch (err) {
     req.session.error = err.message;
     res.redirect("/admin/users");
@@ -419,7 +606,10 @@ exports.toggleUser = async (req, res) => {
 /* ── Coupons ────────────────────────────────────────────────────────── */
 exports.couponList = async (req, res) => {
   const coupons = await Coupon.find().sort({ createdAt: -1 });
-  res.render("coupons/index", { title: "Coupons", page: "coupons", admin: req.session.admin, coupons, success: req.session.success });
+  res.render("coupons/index", {
+    title: "Coupons", page: "coupons", admin: req.session.admin,
+    coupons, success: req.session.success,
+  });
   delete req.session.success;
 };
 
@@ -427,14 +617,20 @@ exports.addCoupon = async (req, res) => {
   try {
     const { code, discountType, discountValue, minOrderAmount, maxUses, expiryDate } = req.body;
     await Coupon.create({
-      code: code.toUpperCase(), discountType, discountValue: Number(discountValue),
-      minOrderAmount: Number(minOrderAmount || 0),
-      maxUses: maxUses ? Number(maxUses) : null,
-      expiryDate: expiryDate || null, isActive: true,
+      code:            code.toUpperCase(),
+      discountType,
+      discountValue:   Number(discountValue),
+      minOrderAmount:  Number(minOrderAmount || 0),
+      maxUses:         maxUses ? Number(maxUses) : null,
+      expiryDate:      expiryDate || null,
+      isActive:        true,
     });
     req.session.success = `Coupon ${code.toUpperCase()} created.`;
-    res.redirect("/admin/coupon");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/coupons"); }
+    res.redirect("/admin/coupons");
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/coupons");
+  }
 };
 
 exports.toggleCoupon = async (req, res) => {
@@ -448,26 +644,19 @@ exports.deleteCoupon = async (req, res) => {
   req.session.success = "Coupon deleted.";
   res.redirect("/admin/coupons");
 };
+
 exports.getCoupons = async (req, res) => {
   try {
-    const now = new Date();
+    const now     = new Date();
     const coupons = await Coupon.find({
       isActive: true,
-      $or: [
-        { expiryDate: null },
-        { expiryDate: { $gte: now } }
-      ]
-    }).select("code discountType discountValue minOrderAmount expiryDate").lean();
-    
-    res.status(200).json({
-      success: true,
-      data: coupons
-    });
+      $or: [{ expiryDate: null }, { expiryDate: { $gte: now } }],
+    })
+      .select("code discountType discountValue minOrderAmount expiryDate")
+      .lean();
+    res.status(200).json({ success: true, data: coupons });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -481,14 +670,13 @@ exports.announcementList = async (req, res) => {
   delete req.session.success; delete req.session.error;
 };
 
-// ✅ FIXED — was accidentally running a query instead of creating
 exports.addAnnouncement = async (req, res) => {
   try {
     const { message, isActive, order, bgColor, textColor, link, startDate, endDate } = req.body;
     await Announcement.create({
       message,
-      isActive: isActive === "on" || isActive === "true",
-      order: Number(order) || 0,
+      isActive:  isActive === "on" || isActive === "true",
+      order:     Number(order) || 0,
       bgColor:   bgColor   || "#d4af37",
       textColor: textColor || "#0f0f0f",
       link:      link      || null,
@@ -497,7 +685,10 @@ exports.addAnnouncement = async (req, res) => {
     });
     req.session.success = "Announcement added.";
     res.redirect("/admin/announcements");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/announcements"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/announcements");
+  }
 };
 
 exports.editAnnouncement = async (req, res) => {
@@ -505,8 +696,8 @@ exports.editAnnouncement = async (req, res) => {
     const { message, isActive, order, bgColor, textColor, link, startDate, endDate } = req.body;
     await Announcement.findByIdAndUpdate(req.params.id, {
       message,
-      isActive: isActive === "on" || isActive === "true",
-      order: Number(order) || 0,
+      isActive:  isActive === "on" || isActive === "true",
+      order:     Number(order) || 0,
       bgColor:   bgColor   || "#d4af37",
       textColor: textColor || "#0f0f0f",
       link:      link      || null,
@@ -515,7 +706,10 @@ exports.editAnnouncement = async (req, res) => {
     });
     req.session.success = "Announcement updated.";
     res.redirect("/admin/announcements");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/announcements"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/announcements");
+  }
 };
 
 exports.deleteAnnouncement = async (req, res) => {
@@ -530,7 +724,6 @@ exports.toggleAnnouncement = async (req, res) => {
   res.redirect("/admin/announcements");
 };
 
-// Public API for frontend navbar
 exports.getAnnouncements = async (req, res) => {
   try {
     const now  = new Date();
@@ -557,49 +750,73 @@ exports.heroBannerList = async (req, res) => {
   delete req.session.success; delete req.session.error;
 };
 
-exports.addHeroBannerPage = (req, res) => {
-  res.render("hero-banners/form", { title: "Add Hero Banner", page: "hero-banners", admin: req.session.admin, banner: null });
-};
+exports.addHeroBannerPage = (req, res) =>
+  res.render("hero-banners/form", {
+    title: "Add Hero Banner", page: "hero-banners", admin: req.session.admin, banner: null,
+  });
 
 exports.addHeroBanner = async (req, res) => {
   try {
-    const { title, subtitle, description, ctaText, ctaLink, backgroundColor, textColor, order, displayType, isActive } = req.body;
+    const {
+      title, subtitle, description, ctaText, ctaLink,
+      backgroundColor, textColor, order, displayType, isActive,
+    } = req.body;
     const image       = req.files?.image       ? `/uploads/${req.files.image[0].filename}`       : null;
     const mobileImage = req.files?.mobileImage ? `/uploads/${req.files.mobileImage[0].filename}` : null;
-    if (!image) { req.session.error = "Please upload a banner image."; return res.redirect("/admin/hero-banners"); }
+    if (!image) {
+      req.session.error = "Please upload a banner image.";
+      return res.redirect("/admin/hero-banners");
+    }
     await HeroBanner.create({
       title, subtitle, description, image, mobileImage,
-      ctaText: ctaText || "Shop Now", ctaLink: ctaLink || "/products",
-      backgroundColor: backgroundColor || "#0f0f0f", textColor: textColor || "#f5f5f5",
-      order: Number(order) || 0, displayType: displayType || "full-width",
-      isActive: isActive === "true",
+      ctaText:         ctaText         || "Shop Now",
+      ctaLink:         ctaLink         || "/products",
+      backgroundColor: backgroundColor || "#0f0f0f",
+      textColor:       textColor       || "#f5f5f5",
+      order:           Number(order)   || 0,
+      displayType:     displayType     || "full-width",
+      isActive:        isActive === "true",
     });
     req.session.success = "Hero banner added.";
     res.redirect("/admin/hero-banners");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/hero-banners"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/hero-banners");
+  }
 };
 
 exports.editHeroBannerPage = async (req, res) => {
   const banner = await HeroBanner.findById(req.params.id);
-  res.render("hero-banners/form", { title: "Edit Hero Banner", page: "hero-banners", admin: req.session.admin, banner });
+  res.render("hero-banners/form", {
+    title: "Edit Hero Banner", page: "hero-banners", admin: req.session.admin, banner,
+  });
 };
 
 exports.editHeroBanner = async (req, res) => {
   try {
-    const { title, subtitle, description, ctaText, ctaLink, backgroundColor, textColor, order, displayType, isActive } = req.body;
+    const {
+      title, subtitle, description, ctaText, ctaLink,
+      backgroundColor, textColor, order, displayType, isActive,
+    } = req.body;
     const update = {
       title, subtitle, description,
-      ctaText: ctaText || "Shop Now", ctaLink: ctaLink || "/products",
-      backgroundColor: backgroundColor || "#0f0f0f", textColor: textColor || "#f5f5f5",
-      order: Number(order) || 0, displayType: displayType || "full-width",
-      isActive: isActive === "true",
+      ctaText:         ctaText         || "Shop Now",
+      ctaLink:         ctaLink         || "/products",
+      backgroundColor: backgroundColor || "#0f0f0f",
+      textColor:       textColor       || "#f5f5f5",
+      order:           Number(order)   || 0,
+      displayType:     displayType     || "full-width",
+      isActive:        isActive === "true",
     };
     if (req.files?.image)       update.image       = `/uploads/${req.files.image[0].filename}`;
     if (req.files?.mobileImage) update.mobileImage = `/uploads/${req.files.mobileImage[0].filename}`;
     await HeroBanner.findByIdAndUpdate(req.params.id, update);
     req.session.success = "Hero banner updated.";
     res.redirect("/admin/hero-banners");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/hero-banners/edit/" + req.params.id); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/hero-banners/edit/" + req.params.id);
+  }
 };
 
 exports.deleteHeroBanner = async (req, res) => {
@@ -614,7 +831,7 @@ exports.toggleHeroBanner = async (req, res) => {
   res.redirect("/admin/hero-banners");
 };
 
-/* ── Gift For Her ───────────────────────────────────────────────────── */
+/* ── Gift Pages (shared loader) ─────────────────────────────────────── */
 const loadGiftData = async (gender) => {
   const [page, tags, filters, giftProducts, allProducts] = await Promise.all([
     GiftPage.findOne({ gender }),
@@ -626,6 +843,7 @@ const loadGiftData = async (gender) => {
   return { page, tags, filters, giftProducts, allProducts };
 };
 
+/* ── Gift For Her ───────────────────────────────────────────────────── */
 exports.giftHerPage = async (req, res) => {
   try {
     const data = await loadGiftData("her");
@@ -634,7 +852,10 @@ exports.giftHerPage = async (req, res) => {
       ...data, success: req.session.success || null, error: req.session.error || null,
     });
     delete req.session.success; delete req.session.error;
-  } catch (err) { console.error(err); res.redirect("/admin"); }
+  } catch (err) {
+    console.error(err);
+    res.redirect("/admin");
+  }
 };
 
 exports.saveHerPageSettings = async (req, res) => {
@@ -647,7 +868,10 @@ exports.saveHerPageSettings = async (req, res) => {
     );
     req.session.success = "Gift For Her settings saved.";
     res.redirect("/admin/gift-for-her");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/gift-for-her"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/gift-for-her");
+  }
 };
 
 exports.addHerTag = async (req, res) => {
@@ -656,7 +880,10 @@ exports.addHerTag = async (req, res) => {
     await GiftTag.create({ gender: "her", label, icon: icon || "◈", order: Number(order) || 0 });
     req.session.success = "Occasion tag added.";
     res.redirect("/admin/gift-for-her");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/gift-for-her"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/gift-for-her");
+  }
 };
 
 exports.deleteHerTag = async (req, res) => {
@@ -677,7 +904,10 @@ exports.addHerFilter = async (req, res) => {
     await GiftFilter.create({ gender: "her", label, value, order: Number(order) || 0 });
     req.session.success = "Filter added.";
     res.redirect("/admin/gift-for-her");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/gift-for-her"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/gift-for-her");
+  }
 };
 
 exports.deleteHerFilter = async (req, res) => {
@@ -696,11 +926,17 @@ exports.addHerProduct = async (req, res) => {
   try {
     const { productId, order } = req.body;
     const exists = await GiftProduct.findOne({ gender: "her", product: productId });
-    if (exists) { req.session.error = "Product already in Gift For Her."; return res.redirect("/admin/gift-for-her"); }
+    if (exists) {
+      req.session.error = "Product already in Gift For Her.";
+      return res.redirect("/admin/gift-for-her");
+    }
     await GiftProduct.create({ gender: "her", product: productId, order: Number(order) || 0 });
     req.session.success = "Product added to Gift For Her.";
     res.redirect("/admin/gift-for-her");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/gift-for-her"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/gift-for-her");
+  }
 };
 
 exports.deleteHerProduct = async (req, res) => {
@@ -724,7 +960,10 @@ exports.giftHimPage = async (req, res) => {
       ...data, success: req.session.success || null, error: req.session.error || null,
     });
     delete req.session.success; delete req.session.error;
-  } catch (err) { console.error(err); res.redirect("/admin"); }
+  } catch (err) {
+    console.error(err);
+    res.redirect("/admin");
+  }
 };
 
 exports.saveHimPageSettings = async (req, res) => {
@@ -737,16 +976,25 @@ exports.saveHimPageSettings = async (req, res) => {
     );
     req.session.success = "Gift For Him settings saved.";
     res.redirect("/admin/gift-for-him");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/gift-for-him"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/gift-for-him");
+  }
 };
 
 exports.addHimTag = async (req, res) => {
   try {
     const { label, icon, desc, order } = req.body;
-    await GiftTag.create({ gender: "him", label, icon: icon || "◈", desc: desc || "", order: Number(order) || 0 });
+    await GiftTag.create({
+      gender: "him", label, icon: icon || "◈",
+      desc: desc || "", order: Number(order) || 0,
+    });
     req.session.success = "Persona added.";
     res.redirect("/admin/gift-for-him");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/gift-for-him"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/gift-for-him");
+  }
 };
 
 exports.deleteHimTag = async (req, res) => {
@@ -767,7 +1015,10 @@ exports.addHimFilter = async (req, res) => {
     await GiftFilter.create({ gender: "him", label, value, order: Number(order) || 0 });
     req.session.success = "Filter added.";
     res.redirect("/admin/gift-for-him");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/gift-for-him"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/gift-for-him");
+  }
 };
 
 exports.deleteHimFilter = async (req, res) => {
@@ -786,11 +1037,17 @@ exports.addHimProduct = async (req, res) => {
   try {
     const { productId, order } = req.body;
     const exists = await GiftProduct.findOne({ gender: "him", product: productId });
-    if (exists) { req.session.error = "Product already in Gift For Him."; return res.redirect("/admin/gift-for-him"); }
+    if (exists) {
+      req.session.error = "Product already in Gift For Him.";
+      return res.redirect("/admin/gift-for-him");
+    }
     await GiftProduct.create({ gender: "him", product: productId, order: Number(order) || 0 });
     req.session.success = "Product added to Gift For Him.";
     res.redirect("/admin/gift-for-him");
-  } catch (err) { req.session.error = err.message; res.redirect("/admin/gift-for-him"); }
+  } catch (err) {
+    req.session.error = err.message;
+    res.redirect("/admin/gift-for-him");
+  }
 };
 
 exports.deleteHimProduct = async (req, res) => {
@@ -805,7 +1062,7 @@ exports.toggleHimProduct = async (req, res) => {
   res.redirect("/admin/gift-for-him");
 };
 
-/* ── Gift Public API (used by React frontend) ───────────────────────── */
+/* ── Gift Public API ────────────────────────────────────────────────── */
 const buildGiftApiResponse = async (gender, res) => {
   try {
     const [page, tags, filters, giftProducts] = await Promise.all([
